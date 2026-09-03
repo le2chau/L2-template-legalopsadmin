@@ -17,7 +17,7 @@ sap.ui.define([
         return oItem.getText().toLowerCase().indexOf(sValue.toLowerCase()) === 0;
     }
 
-    var L3_URL = "http://localhost:3031/";
+    var L3_URL = "https://le2chau.github.io/L3-template-legalopsadmin/";
 
     // Maps column header label text → mock data binding path used for sorting
     var _mColSortPaths = {
