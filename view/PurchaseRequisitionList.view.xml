@@ -1,0 +1,278 @@
+<mvc:View
+    controllerName="com.sap.ariba.l2purchaserequisition.controller.PurchaseRequisitionList"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    displayBlock="true"
+>
+    <f:DynamicPage id="dynamicPage" class="aribaL2Page" headerExpanded="true" toggleHeaderOnTitleClick="true">
+
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:breadcrumbs>
+                    <Breadcrumbs currentLocationText="Contract Management: Legal Agreement Templates">
+                        <links>
+                            <Link text="Home" press=".onBreadcrumbPress" />
+                        </links>
+                    </Breadcrumbs>
+                </f:breadcrumbs>
+                <f:navigationActions>
+                    <Button
+                        icon="sap-icon://overflow"
+                        type="Transparent"
+                        tooltip="More"
+                        press=".onOverflow"
+                    />
+                </f:navigationActions>
+                <f:heading>
+                    <VariantManagement
+                        id="pageVariant"
+                        select=".onVariantSelect"
+                        save=".onVariantSave"
+                        manage=".onVariantManage"
+                        selectedKey="standard"
+                    >
+                        <items>
+                            <VariantItem text="All Legal Agreement Templates" key="standard" />
+                            <VariantItem text="My Requests" key="myreqs" />
+                            <VariantItem text="Awaiting Approval" key="awaitapproval" />
+                        </items>
+                    </VariantManagement>
+                </f:heading>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:header>
+            <f:DynamicPageHeader pinnable="true">
+                <HBox wrap="Wrap" class="aribaFilterBar">
+                    <!-- SearchField: label-less (Figma placeholder-only exception). Wrapped in a
+                         bottom-aligning VBox so its input baseline matches the labeled fields. -->
+                    <VBox class="aribaFilterField aribaFilterFieldNoLabel" justifyContent="End">
+                        <layoutData>
+                            <FlexItemData growFactor="1" shrinkFactor="0" baseSize="0px" minWidth="13.5rem" maxWidth="24rem" />
+                        </layoutData>
+                        <SearchField
+                            id="searchField"
+                            placeholder="Search"
+                            width="100%"
+                            search=".onSearch"
+                            liveChange=".onSearch"
+                        />
+                    </VBox>
+                    <VBox class="aribaFilterField">
+                        <layoutData>
+                            <FlexItemData growFactor="1" shrinkFactor="0" baseSize="0px" minWidth="13.5rem" maxWidth="24rem" />
+                        </layoutData>
+                        <Label text="Status" labelFor="statusFilter" showColon="true" />
+                        <MultiComboBox
+                            id="statusFilter"
+                            placeholder="All statuses"
+                            width="100%"
+                            selectionChange=".onSearch"
+                        >
+                            <items>
+                                <core:Item text="Draft" key="Draft" />
+                                <core:Item text="Submitted" key="Submitted" />
+                                <core:Item text="Awaiting Approval" key="Awaiting Approval" />
+                                <core:Item text="Approved" key="Approved" />
+                                <core:Item text="Rejected" key="Rejected" />
+                            </items>
+                        </MultiComboBox>
+                    </VBox>
+                    <VBox class="aribaFilterField">
+                        <layoutData>
+                            <FlexItemData growFactor="1" shrinkFactor="0" baseSize="0px" minWidth="13.5rem" maxWidth="24rem" />
+                        </layoutData>
+                        <Label text="Contract Type" labelFor="contractTypeFilter" showColon="true" />
+                        <MultiComboBox
+                            id="contractTypeFilter"
+                            placeholder="All contract types"
+                            width="100%"
+                            selectionChange=".onSearch"
+                        >
+                            <items>
+                                <core:Item text="NDA" key="NDA" />
+                                <core:Item text="MSA" key="MSA" />
+                                <core:Item text="SaaS Agreement" key="SaaS Agreement" />
+                                <core:Item text="Employment" key="Employment" />
+                                <core:Item text="Licensing" key="Licensing" />
+                                <core:Item text="Consulting" key="Consulting" />
+                                <core:Item text="Partnership" key="Partnership" />
+                                <core:Item text="Procurement" key="Procurement" />
+                            </items>
+                        </MultiComboBox>
+                    </VBox>
+                    <VBox class="aribaFilterField">
+                        <layoutData>
+                            <FlexItemData growFactor="1" shrinkFactor="0" baseSize="0px" minWidth="13.5rem" maxWidth="24rem" />
+                        </layoutData>
+                        <Label text="Governing Law" labelFor="governingLawFilter" showColon="true" />
+                        <MultiInput
+                            id="governingLawFilter"
+                            placeholder="All governing laws"
+                            width="100%"
+                            showSuggestion="true"
+                            tokenUpdate=".onGoverningLawTokenUpdate"
+                        >
+                            <suggestionItems>
+                                <core:Item text="United States" key="United States" />
+                                <core:Item text="United Kingdom" key="United Kingdom" />
+                                <core:Item text="Germany" key="Germany" />
+                                <core:Item text="France" key="France" />
+                                <core:Item text="Netherlands" key="Netherlands" />
+                                <core:Item text="Singapore" key="Singapore" />
+                                <core:Item text="Japan" key="Japan" />
+                            </suggestionItems>
+                        </MultiInput>
+                    </VBox>
+                    <Button text="Adapt Filters" type="Transparent" press=".onAdaptFilters">
+                        <layoutData>
+                            <FlexItemData growFactor="1" shrinkFactor="1" baseSize="0px" minWidth="12rem" styleClass="sapUiTinyMarginBottom" />
+                        </layoutData>
+                    </Button>
+                </HBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+                        <Table
+                            id="prTable"
+                            items="{mock>/purchaseRequisitions}"
+                            mode="MultiSelect"
+                            itemPress=".onItemPress"
+                            autoPopinMode="true"
+                            popinLayout="Block"
+                            hiddenInPopin="None"
+                            sticky="ColumnHeaders"
+                            contextualWidth="Inherit"
+                            class="prTableRowPadding aribaObjectStatusBTokens sapUiSizeCompact sapUiSmallMarginBottom"
+                        >
+                            <headerToolbar>
+                                <OverflowToolbar>
+                                    <Title text="Legal Agreement Templates" titleStyle="H5" wrapping="false" />
+                                    <Text text="(8)" class="aribaL2TableTitleCount" />
+                                    <ToolbarSpacer />
+                                    <MenuButton
+                                        text="Create"
+                                        type="Emphasized"
+                                        buttonMode="Split"
+                                        useDefaultActionOnly="true"
+                                        press=".onCreate"
+                                    >
+                                        <menu>
+                                            <Menu>
+                                                <items>
+                                                    <MenuItem text="Create from Scratch" icon="sap-icon://request" press=".onCreate" />
+                                                    <MenuItem text="Create from Document" icon="sap-icon://document-text" press=".onCreateFromDocument" />
+                                                </items>
+                                            </Menu>
+                                        </menu>
+                                    </MenuButton>
+                                    <Button text="Delete" type="Transparent" press=".onDelete" />
+                                    <ToolbarSeparator />
+                                    <Button icon="sap-icon://action" tooltip="Actions" type="Transparent" press=".onTableActions" />
+                                    <ToolbarSeparator />
+                                    <SegmentedButton
+                                        id="showHideDetails"
+                                        selectionChange=".onShowHideDetails"
+                                        selectedKey="dtshow"
+                                    >
+                                        <items>
+                                            <SegmentedButtonItem key="dthide" icon="sap-icon://detail-less" tooltip="Compact view" />
+                                            <SegmentedButtonItem key="dtshow" icon="sap-icon://detail-more" tooltip="Show details" />
+                                        </items>
+                                    </SegmentedButton>
+                                    <ToolbarSeparator />
+                                    <Button
+                                        icon="sap-icon://action-settings"
+                                        tooltip="Column Settings"
+                                        type="Transparent"
+                                        press=".onColumnSettings"
+                                    />
+                                    <ToolbarSeparator />
+                                    <MenuButton
+                                        icon="sap-icon://excel-attachment"
+                                        tooltip="Export to Spreadsheet"
+                                        buttonMode="Split"
+                                        type="Transparent"
+                                        useDefaultActionOnly="true"
+                                        press=".onExport"
+                                    >
+                                        <menu>
+                                            <Menu>
+                                                <items>
+                                                    <MenuItem text="Export as Spreadsheet" />
+                                                    <MenuItem text="Export as PDF" />
+                                                </items>
+                                            </Menu>
+                                        </menu>
+                                    </MenuButton>
+                                </OverflowToolbar>
+                            </headerToolbar>
+
+                            <columns>
+                                <!-- Col 1: Template -->
+                                <Column width="auto" autoPopinWidth="18" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                                    <Text text="Template" />
+                                </Column>
+                                <!-- Col 2: Status -->
+                                <Column width="10rem" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                                    <Text text="Status" />
+                                </Column>
+                                <!-- Col 3: Contract Type -->
+                                <Column id="colContractType" width="12rem" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                                    <Text text="Contract Type" />
+                                </Column>
+                                <!-- Col 4: Governing Law -->
+                                <Column id="colGoverningLaw" width="12rem" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                                    <Text text="Governing Law" />
+                                </Column>
+                                <!-- Col 5: Language -->
+                                <Column id="colLanguage" width="10rem" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                                    <Text text="Language" />
+                                </Column>
+                                <!-- Col 6: Changed On -->
+                                <Column id="colNeedBy" width="8rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+                                    <Text text="Changed On" />
+                                </Column>
+                                <!-- Col 6: Amount -->
+                                <Column id="colAmount" width="10rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline" visible="false">
+                                    <Text text="Amount" />
+                                </Column>
+                            </columns>
+
+                            <items>
+                                <ColumnListItem type="Navigation" press=".onItemPress" vAlign="Middle">
+                                    <cells>
+                                        <!-- Cell 1: PR Title -->
+                                        <ObjectIdentifier title="{mock>title}" text="{mock>id}" />
+                                        <!-- Cell 2: Status -->
+                                        <ObjectStatus text="{mock>status}" state="{mock>statusState}" inverted="true" />
+                                        <!-- Cell 3: Contract Type -->
+                                        <Text text="{mock>contractType}" />
+                                        <!-- Cell 4: Governing Law -->
+                                        <Text text="{mock>governingLaw}" />
+                                        <!-- Cell 5: Language -->
+                                        <Text text="{mock>language}" />
+                                        <!-- Cell 6: Changed On -->
+                                        <Text text="{ path: 'mock>needBy', type: 'sap.ui.model.type.Date', formatOptions: { source: { pattern: 'yyyy-MM-dd' }, pattern: 'MMM dd, yyyy' } }" textAlign="End" />
+                                        <!-- Cell 6: Amount -->
+                                        <ObjectNumber number="{mock>amountValue}" unit="{mock>amountUnit}" emphasized="true" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+
+                            <noData>
+                                <IllustratedMessage
+                                    illustrationType="sapIllus-NoFilterResults"
+                                    illustrationSize="Large"
+                                    title="We couldn't find any matches"
+                                    description="Try adjusting your search or filter criteria."
+                                />
+                            </noData>
+                        </Table>
+        </f:content>
+
+    </f:DynamicPage>
+</mvc:View>

@@ -1,0 +1,23 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns:vh="sap.ui.comp.valuehelpdialog"
+>
+    <!-- VHD shell only. The result table is created internally by the dialog and retrieved
+         via getTableAsync() in the controller (desktop = sap.ui.table.Table), where its
+         columns/rows are bound. The basicSearch SearchField is set programmatically in the
+         controller (setBasicSearch) — the basicSearch aggregation does not resolve as a
+         declarative child element at 1.148.1 (the XML parser tries to load it as a control).
+         supportRanges defaults false → Search-and-Select tab only, no Conditions tab (Ariba
+         Filter Bar wiki: strings show Search and Select; show Conditions only if needed).
+         key/descriptionKey drive token text. -->
+    <vh:ValueHelpDialog
+        id="requesterVHD"
+        title="Requester"
+        key="requester"
+        descriptionKey="requester"
+        supportMultiselect="true"
+        ok=".onRequesterVHDOk"
+        cancel=".onRequesterVHDCancel"
+        afterClose=".onRequesterVHDAfterClose"
+    />
+</core:FragmentDefinition>

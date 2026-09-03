@@ -1,0 +1,54 @@
+{
+    "_version": "1.65.0",
+    "sap.app": {
+        "id": "com.sap.ariba.l2purchaserequisition",
+        "type": "application",
+        "title": "Purchase Requests",
+        "description": "L2 Purchase Requests list page — Ariba Buying",
+        "applicationVersion": {
+            "version": "1.0.0"
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": false
+        }
+    },
+    "sap.ui5": {
+        "rootView": {
+            "viewName": "com.sap.ariba.l2purchaserequisition.view.NavigationLayout",
+            "type": "XML",
+            "async": true,
+            "id": "app"
+        },
+        "dependencies": {
+            "minUI5Version": "1.136.0",
+            "libs": {
+                "sap.m": {},
+                "sap.f": {},
+                "sap.tnt": {},
+                "sap.ui.core": {}
+            }
+        },
+        "contentDensities": {
+            "compact": true,
+            "cozy": false
+        },
+        "models": {
+            "mock": {
+                "type": "sap.ui.model.json.JSONModel",
+                "uri": "model/mockData.json"
+            }
+        },
+        "resources": {
+            "css": [
+                {
+                    "uri": "css/style.css?v=22"
+                }
+            ]
+        }
+    }
+}

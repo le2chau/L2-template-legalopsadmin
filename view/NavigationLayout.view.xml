@@ -1,0 +1,117 @@
+<mvc:View
+    controllerName="com.sap.ariba.l2purchaserequisition.controller.NavigationLayout"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:tnt="sap.tnt"
+    displayBlock="true"
+>
+    <tnt:ToolPage id="toolPage" sideExpanded="true">
+
+        <!-- Shell Bar -->
+        <tnt:header>
+            <f:ShellBar
+                id="shellBar"
+                title="Ariba"
+                homeIcon="https://www.sap.com/dam/application/shared/logos/sap-logo-svg.svg/sap-logo-svg.svg"
+                homeIconTooltip="SAP"
+                showMenuButton="true"
+                menuButtonPressed=".onToggleSideNav"
+                showNavButton="true"
+                navButtonPressed=".onNavBack"
+                avatarPressed=".onProfilePressed"
+            >
+                <f:searchManager>
+                    <f:SearchManager
+                        id="shellSearch"
+                        placeholder="Search"
+                        search=".onSearch"
+                    />
+                </f:searchManager>
+                <f:profile>
+                    <Avatar initials="CE" backgroundColor="Accent6" displaySize="XS" tooltip="Profile" />
+                </f:profile>
+                <f:additionalContent>
+                    <OverflowToolbarButton id="jouleBtn" icon="sap-icon://da" text="Joule" tooltip="Joule" press=".onJoule" type="Transparent" />
+                    <OverflowToolbarButton icon="sap-icon://bell" text="Notifications" tooltip="1 Notification" press=".onNotifications" type="Transparent" badgeAnimationType="None">
+                        <customData>
+                            <BadgeCustomData value="1" visible="true" animation="None" />
+                        </customData>
+                    </OverflowToolbarButton>
+                    <OverflowToolbarButton icon="sap-icon://feedback" text="Give Feedback to SAP" tooltip="Give Feedback to SAP" press=".onFeedback" type="Transparent" />
+                    <OverflowToolbarButton icon="sap-icon://sys-help" text="Help Center" tooltip="Help Center" press=".onHelp" type="Transparent" />
+                </f:additionalContent>
+            </f:ShellBar>
+        </tnt:header>
+
+        <!-- Side Navigation -->
+        <tnt:sideContent>
+            <tnt:SideNavigation id="sideNav">
+                <tnt:item>
+                    <tnt:NavigationList>
+                        <tnt:NavigationListItem id="homeItem" text="Home" icon="sap-icon://home" press=".onHomeNavItem" />
+                        <tnt:NavigationListItem text="Spend Insights" icon="sap-icon://business-objects-experience" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Spend Taxonomies" />
+                            <tnt:NavigationListItem text="Supplier Enrichment" />
+                            <tnt:NavigationListItem text="Spend Categorization" />
+                            <tnt:NavigationListItem text="Spend Dashboards" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Category Management" icon="sap-icon://org-chart" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Category Profile" />
+                            <tnt:NavigationListItem text="Strategy and Plan" />
+                            <tnt:NavigationListItem text="Strategy Execution" />
+                            <tnt:NavigationListItem text="Initiatives" />
+                            <tnt:NavigationListItem text="Toolkit" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Suppliers" icon="sap-icon://inventory" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Supplier List" />
+                            <tnt:NavigationListItem text="Evaluations" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Sourcing" icon="sap-icon://geographic-bubble-chart" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Requests" />
+                            <tnt:NavigationListItem text="Aggregation" />
+                            <tnt:NavigationListItem text="Projects" />
+                            <tnt:NavigationListItem text="Events" />
+                            <tnt:NavigationListItem text="Project Templates" />
+                            <tnt:NavigationListItem text="Event Templates" />
+                            <tnt:NavigationListItem text="Term Library" />
+                            <tnt:NavigationListItem text="Content Library" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Contract Management" icon="sap-icon://request" expanded="true" selectable="false">
+                            <tnt:NavigationListItem text="Contracts" />
+                            <tnt:NavigationListItem text="Creation Jobs" />
+                            <tnt:NavigationListItem text="Legal Agreement Templates" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Buying" icon="sap-icon://cart-approval" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Shopping" />
+                            <tnt:NavigationListItem text="My Requests" />
+                            <tnt:NavigationListItem text="Purchase Requests" />
+                            <tnt:NavigationListItem text="Purchase Orders" />
+                            <tnt:NavigationListItem text="Service Entry Sheets" />
+                            <tnt:NavigationListItem text="Receipts" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Invoicing" icon="sap-icon://receipt" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Invoices" />
+                            <tnt:NavigationListItem text="Invoice Capture Template" />
+                        </tnt:NavigationListItem>
+                        <tnt:NavigationListItem text="Analytics" icon="sap-icon://filter-analytics" expanded="false" selectable="false">
+                            <tnt:NavigationListItem text="Dashboards" />
+                        </tnt:NavigationListItem>
+                    </tnt:NavigationList>
+                </tnt:item>
+                <tnt:fixedItem>
+                    <tnt:NavigationList>
+                        <tnt:NavigationListItem text="Create" icon="sap-icon://add" design="Action" selectable="false" />
+                        <tnt:NavigationListItem text="Administration Center" icon="sap-icon://key-user-settings" />
+                    </tnt:NavigationList>
+                </tnt:fixedItem>
+            </tnt:SideNavigation>
+        </tnt:sideContent>
+
+        <!-- Main Content -->
+        <tnt:mainContents>
+            <mvc:XMLView viewName="com.sap.ariba.l2purchaserequisition.view.PurchaseRequisitionList" />
+        </tnt:mainContents>
+
+    </tnt:ToolPage>
+</mvc:View>

@@ -1,0 +1,936 @@
+/* Custom overrides for L2 Purchase Requests prototype */
+/* Inherits all NavigationLayout shell styles below; L2-specific rules at the bottom */
+
+/* ---- Side Navigation: one-click area ---- */
+/* SAPUI5 renders parent items with sapTntNLITwoClickAreas and adds a 1px border-left on the
+   expand icon, creating a visible | separator. Remove it to match the one-click area spec. */
+.sapTntSideNavigation .sapTntNLIExpandIcon {
+    border-left: none !important;
+    margin-left: 0 !important;
+}
+
+/* ---- Side Navigation: smooth expand/collapse width transition ---- */
+/* SAPUI5 only animates transform on the aside wrapper (transform never changes, so it fires
+   nothing). Adding width makes the outer container slide in sync with the inner
+   .sapTntSideNavigation which already carries transition: width 0.3s. !important overrides
+   SAPUI5's transition declaration on .sapTntToolPageAside. */
+.sapTntToolPageAside {
+    transition: transform 0.3s, width 0.3s !important;
+}
+
+/* ---- ShellBar: Product Name (A.2) font size ---- */
+/* Visual Core A.2: Product Name — --sapFontHeader5Size (1rem/16px), SemiboldDuplex family.
+   SAPUI5 framework sets font-weight: 700; 72-SemiboldDuplex registers as a single 400-weight
+   face — font-weight: normal prevents synthetic bold (measured pre-fix: 700).
+   Cascade note: framework has a !important font-family rule at 0,3,0 specificity (loaded first).
+   CSS !important tiebreak: higher specificity wins regardless of source order, so we must reach
+   0,4,0. .sapMTitleStyleH6 is always co-present on this element — verified in DOM. */
+.sapFShellBar .sapFShellBarPrimaryTitle.sapMTitle.sapMTitleStyleH6 {
+    font-size: var(--sapFontHeader5Size) !important;
+    font-family: var(--sapFontSemiboldDuplexFamily) !important;
+    font-weight: normal !important;
+}
+
+.sapFShellBar {
+    /* spec: inset 0 -0.0625rem 0 0 --sapShell_BorderColor — 1px bottom separator, not a drop shadow */
+    /* !important overrides SAPUI5's default drop shadow applied via higher-specificity size class rules */
+    box-shadow: inset 0 -0.0625rem 0 0 var(--sapShell_BorderColor) !important;
+    /* embedded side nav: fixed 14px left / 16px right — overrides SAPUI5 responsive size classes (.sapFShellBarSizeDesktop etc.) which have higher specificity */
+    padding-left: 0.875rem !important;
+    padding-right: 1rem !important;
+}
+
+/* ToolPage wraps the ShellBar in its own div with a drop shadow — suppress it; the ShellBar itself carries the correct 1px border */
+.sapTntToolPageHeaderWrapper {
+    box-shadow: none !important;
+}
+
+/* ---- ShellBar left area item order ---- */
+/* SAPUI5 renders the back button first in DOM and hamburger second — swap to match Fiori spec (hamburger → back → branding) */
+.sapFShellBarOLHB {
+    gap: 0.5rem; /* 8px between hamburger, back, and branding per spec */
+}
+.sapFShellBarOLHB > button:nth-child(2) {
+    order: -1; /* hamburger: move before back button visually */
+    margin-left: 0 !important; /* SAPUI5 adds 8px margin-left via adjacent-sibling rule — zero it out, gap handles spacing */
+}
+
+/* ---- Unified branding button: logo + title as one interactive zone ---- */
+
+.sapFShellBar .ariba-branding-btn {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    padding: 0 0.25rem 0 0;
+    height: 2.25rem;
+    gap: 0;
+}
+
+.sapFShellBar .ariba-branding-btn:focus {
+    outline: var(--sapContent_FocusWidth, 0.125rem) var(--sapContent_FocusStyle, solid) var(--sapContent_FocusColor);
+    outline-offset: 0.125rem;
+}
+
+.sapFShellBar .ariba-branding-btn:hover {
+    background: var(--sapShell_InteractiveBackground);
+}
+
+.sapFShellBar .ariba-branding-btn:active {
+    background: var(--sapShell_InteractiveBackground);
+}
+
+/* Suppress any SAPUI5 standalone hover ring on the logo inside our wrapper */
+.sapFShellBar .ariba-branding-btn img.sapFShellBarHomeIcon:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Prevent logo from capturing pointer events — all clicks go to the wrapper button */
+.sapFShellBar .ariba-branding-btn img.sapFShellBarHomeIcon {
+    pointer-events: none;
+}
+
+/* ---- Shell Search ---- */
+/* Search toggle button: SAPUI5 renders it at 28x28px with border-radius:18px (circular).
+   Override to match the 36x36px rounded-rectangle shape of the OverflowToolbarButtons
+   (Joule, Notifications, etc.). :first-child targets the toggle; the submit button inside
+   the pill is a later sibling and must not be affected. */
+.sapFShellBar .sapFShellBarSearchWrap > .sapMBtnBase:first-child {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    padding: 0 !important;
+}
+.sapFShellBar .sapFShellBarSearchWrap > .sapMBtnBase:first-child .sapMBtnInner {
+    border-radius: var(--sapButton_BorderCornerRadius) !important;
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    align-items: center; /* SAPUI5 leaves align-items:normal; icon (28px) drifts to top of 36px box */
+}
+/* Focus ring: SAPUI5 renders the focus indicator as a ::before pseudo-element on .sapMBtnInner
+   with border-radius:18px (circular). Override to match the rounded-rectangle radius of other
+   shell action buttons. */
+.sapFShellBar .sapFShellBarSearchWrap > .sapMBtnBase:first-child .sapMBtnInner::before {
+    border-radius: var(--sapButton_BorderCornerRadius) !important;
+}
+
+/* Pill shape: spec border-radius 1.125rem (18px). !important overrides sap.m.SearchField's own border-radius token */
+/* margin-left: auto right-aligns the pill (field grows leftward from the button per spec).
+   margin-right: 2rem reserves ~32px for the absolute-positioned submit button (28px wide + 4px margin). */
+.sapFShellBar .sapMSF {
+    border-radius: 1.125rem !important;
+    flex: 0 0 18rem !important;
+    width: 18rem !important;
+    min-width: 18rem;
+    max-width: 36rem;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+/* Safety net: sapFShellBarFullSearch at LargeDesktop (1920px side effect) resets all visual
+   changes that the class makes. */
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarOLHB,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarORHB,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarORHB .sapMIBar,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarItem,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarSearchWrap,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFAvatar,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .ariba-branding-btn,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarItem *,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .ariba-branding-btn *,
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFAvatar * {
+    /* framework `.sapFShellBarFullSearch * {visibility:hidden}` sets an EXPLICIT hidden on every
+       descendant; parent-only restore cannot override children with their own declaration.
+       .sapFShellBarItem scope excludes .sapMTBHiddenElement (overflow clone, no .sapFShellBarItem). */
+    visibility: visible !important;
+}
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarSearchWrap {
+    /* framework FullSearch positions this absolute left:0 right:0 as a full-bar search-open overlay;
+       at LargeDesktop the search is a normal toolbar flex item — return it to flow */
+    position: static !important;
+    padding: 0;
+}
+.sapFShellBarSizeLargeDesktop.sapFShellBarFullSearch .sapFShellBarSearchFullWidth {
+    /* framework `.sapFShellBarFullSearch .sapFShellBarSearchFullWidth{height:100%;min-width:1px}`
+       pins the item toward top:0 for the overlay; with position:static on the wrap (above),
+       vertical centering is lost. display:flex+align-items:center restores it.
+       No !important needed: our specificity (0,3,0) beats the framework's (0,2,0). */
+    display: flex;
+    align-items: center;
+}
+
+/* Submit button stays position:absolute (SAPUI5 default) — sits on top of pill's right end */
+.sapFShellBarSearchWrap > .sapMBtn:not(.sapFShellBarSearchCancelButton) {
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+/* The visible decorator (inner form container) also needs the radius.
+   Targets .sapMSFF — SAPUI5 1.136 renders the inner container with this class, not .sapMSFD.
+   !important on each declaration overrides SAPUI5 SearchField's author-stylesheet rules. */
+.sapFShellBar .sapMSFF {
+    border-radius: 1.125rem !important;
+    background: var(--sapShell_InteractiveBackground) !important;
+    box-shadow: var(--sapField_Shadow) !important;
+    border-color: transparent !important;
+}
+
+/* HC theme override: transparent border is invisible against HC shell backgrounds.
+   SAPUI5 adds sapUiTheme-sap_horizon_hcb / sapUiTheme-sap_horizon_hcw to <html>.
+   --sapField_BorderColor resolves to a legible high-contrast border token in both HC variants
+   (confirmed via applyTheme() inspection in NavigationLayout work).
+   !important overrides our own border-color:transparent rule above. */
+.sapUiTheme-sap_horizon_hcb .sapFShellBar .sapMSFF,
+.sapUiTheme-sap_horizon_hcw .sapFShellBar .sapMSFF {
+    border-color: var(--sapField_BorderColor) !important;
+}
+
+/* OS-level forced-colors safety net (separate from SAPUI5 theme switching). */
+@media (forced-colors: active) {
+    .sapFShellBar .sapMSFF {
+        border-color: ButtonText !important;
+        /* forced-colors overrides SAPUI5 author stylesheet; !important beats our transparent rule */
+    }
+}
+
+/* Italic placeholder per spec */
+.sapFShellBar .sapMSFI::placeholder {
+    font-style: italic;
+}
+
+/* Search submit button turns Emphasized (blue) while the field has a typed value. */
+.sapFShellBarSearchWrap > .sapMSFVal ~ .sapMBtn:not(.sapFShellBarSearchCancelButton) .sapMBtnInner {
+    background: var(--sapButton_Emphasized_Background) !important;
+    color: var(--sapButton_Emphasized_TextColor) !important;
+    border-color: var(--sapButton_Emphasized_BorderColor) !important;
+    text-shadow: var(--sapButton_Emphasized_TextShadow) !important;
+}
+.sapFShellBarSearchWrap > .sapMSFVal ~ .sapMBtn:not(.sapFShellBarSearchCancelButton) .sapMBtnInner .sapMBtnIcon {
+    color: var(--sapButton_Emphasized_TextColor) !important;
+}
+
+.sapFShellBarSearchWrap > .sapMSFVal ~ .sapMBtn:not(.sapFShellBarSearchCancelButton) .sapMBtnInner.sapMBtnHovered {
+    background: var(--sapButton_Emphasized_Hover_Background) !important;
+    color: var(--sapButton_Emphasized_Hover_TextColor) !important;
+    border-color: var(--sapButton_Emphasized_Hover_BorderColor) !important;
+    text-shadow: none !important;
+}
+.sapFShellBarSearchWrap > .sapMSFVal ~ .sapMBtn:not(.sapFShellBarSearchCancelButton) .sapMBtnInner.sapMBtnHovered .sapMBtnIcon {
+    color: var(--sapButton_Emphasized_Hover_TextColor) !important;
+}
+
+.sapFShellBarSearchWrap > .sapMSFVal ~ .sapMBtn:not(.sapFShellBarSearchCancelButton) .sapMBtnInner.sapMBtnActive {
+    background: var(--sapButton_Emphasized_Active_Background) !important;
+    color: var(--sapButton_Emphasized_Active_TextColor) !important;
+    border-color: var(--sapButton_Emphasized_Active_BorderColor) !important;
+    text-shadow: none !important;
+}
+.sapFShellBarSearchWrap > .sapMSFVal ~ .sapMBtn:not(.sapFShellBarSearchCancelButton) .sapMBtnInner.sapMBtnActive .sapMBtnIcon {
+    color: var(--sapButton_Emphasized_Active_TextColor) !important;
+}
+
+/* ---- Shell Search Suggestion Popover ---- */
+
+.aribaSuggestPopover.sapMPopover {
+    margin-top: 0.25rem !important;
+}
+
+.aribaSuggestPopover .sapMPopoverArr {
+    display: none !important;
+}
+
+.aribaSuggestPopover .sapMLIBDescription {
+    color: var(--sapContent_MarkerTextColor) !important;
+}
+
+.aribaSuggestPopover .sapMPopoverFooter .sapMBtnInner {
+    justify-content: center;
+}
+
+/* Remove item separators inside the suggestion list */
+.aribaSuggestPopover .sapMLIB {
+    border-bottom: none !important;
+}
+
+.aribaSuggestPopover .sapMSLIImgNoInsetIcon {
+    font-size: 1rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    line-height: 1rem !important;
+    min-width: 1rem !important;
+}
+
+.aribaSuggestPopover .sapMLIB:not(.sapMSLIWithDescription):not(.sapMGHLI) {
+    min-height: var(--sapElement_Compact_LineHeight) !important;
+    height: var(--sapElement_Compact_LineHeight) !important;
+}
+.aribaSuggestPopover .sapMLIBContent {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    align-items: center;
+}
+
+/* Group header: 44px total (20px top + ~16px text + 8px bottom) per spec.
+   Placed after the :not(.sapMSLIWithDescription) height rule to win source-order cascade. */
+.aribaSuggestPopover .sapMLIB.sapMGHLI {
+    height: auto !important;
+    min-height: 2.75rem !important; /* 44px */
+    padding: 0 !important;          /* li carries no padding; spacing lives on .sapMLIBContent */
+    border-bottom: 1px solid var(--sapList_BorderColor) !important;
+}
+.aribaSuggestPopover .sapMGHLI .sapMLIBContent {
+    padding-top: 1.25rem !important;  /* 20px */
+    padding-bottom: 0.5rem !important; /* 8px */
+    padding-left: 1rem !important;    /* 16px — matches list item left indent */
+}
+/* SAPUI5 hard-codes height:32px and line-height:32px on .sapMGHLITitle — reset to natural text height */
+.aribaSuggestPopover .sapMGHLITitle {
+    height: auto !important;
+    line-height: normal !important;
+}
+
+.aribaSuggestPopover .sapMLIB:not(.sapMGHLI):hover {
+    background-color: var(--sapList_Hover_Background) !important;
+    cursor: pointer;
+}
+
+.aribaSuggestPopover .sapMLIB:not(.sapMGHLI):active {
+    background-color: var(--sapList_Active_Background) !important;
+}
+.aribaSuggestPopover .sapMLIB:not(.sapMGHLI):active .sapMSLITitleOnly,
+.aribaSuggestPopover .sapMLIB:not(.sapMGHLI):active .sapMSLITitle,
+.aribaSuggestPopover .sapMLIB:not(.sapMGHLI):active .sapMSLIDescription,
+.aribaSuggestPopover .sapMLIB:not(.sapMGHLI):active .sapMSLIImgNoInsetIcon {
+    color: var(--sapList_Active_TextColor) !important;
+    text-shadow: none !important;
+}
+
+.aribaSuggestPopover .sapMLIB:focus-visible {
+    outline-offset: -0.125rem !important;
+    border-radius: 0 !important;
+}
+
+/* ---- Side Navigation: stabilise separator vertical position ---- */
+/* The framework adds margin-top:0.125rem to the first fixed NLI only in expanded state,
+   making the fixed nav 2px taller when expanded. Match it in collapsed state so the
+   separator does not shift by 2px on toggle. */
+.sapTntSideNavigationNotExpanded .sapTntSideNavigationFixed .sapTntNLI.sapTntNLIFirstLevel:first-of-type {
+    margin-top: 0.125rem;
+}
+
+/* ---- User Menu Popover ---- */
+
+.aribaUserMenuPopover.sapMPopover {
+    margin-top: 0.25rem !important;
+    margin-right: 0.5rem !important;
+}
+
+.aribaUserMenuHeader.sapMFlexBox {
+    padding: 1rem 1rem 0.75rem;
+}
+
+.aribaUserMenuEmail.sapMText {
+    color: var(--sapContent_LabelColor) !important;
+    font-size: var(--sapFontSmallSize) !important;
+    margin-top: 0.125rem;
+}
+
+.aribaUserMenuPopover .sapMLIB:not(.sapMGHLI):hover {
+    background-color: var(--sapList_Hover_Background) !important;
+    cursor: pointer;
+}
+
+.aribaUserMenuPopover .sapMLIB {
+    min-height: var(--sapElement_Compact_LineHeight) !important;
+    height: var(--sapElement_Compact_LineHeight) !important;
+}
+.aribaUserMenuPopover .sapMLIBContent {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    align-items: center;
+}
+
+/* ---- Settings Dialog ---- */
+
+/* Propagates section's definite height through SAPUI5's inline-block wrapper —
+   required for height: 100% to resolve on layout and left panel. */
+.aribaSettingsDialog .sapMDialogScroll {
+    height: 100%;
+}
+
+.aribaSettingsDialog .sapMDialogScrollCont {
+    padding: 0 !important;
+    height: 100%;
+}
+
+.aribaSettingsLayout.sapMFlexBox {
+    height: 100%;
+    overflow: hidden;
+}
+
+.aribaSettingsLeft.sapMFlexBox {
+    width: 20rem;
+    min-width: 20rem;
+    flex-shrink: 0;
+    border-right: 0.0625rem solid var(--sapList_BorderColor);
+    padding: 0;
+    background: var(--sapBackgroundColor);
+    overflow-y: auto;
+    overscroll-behavior: none;
+    height: 100%;
+}
+
+.aribaSettingsLeftTitle.sapMTitle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: 2.5rem; /* Bar (Horizon) Compact header-height — Visual Core "Bar (Horizon)" */
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    box-sizing: border-box;
+    background: var(--sapPageHeader_Background); /* Bar (Horizon) Header spec */
+    color: var(--sapPageHeader_TextColor);        /* Bar (Horizon) Header spec */
+    box-shadow: var(--sapContent_HeaderShadow);   /* required: bg = list bg in all themes */
+}
+
+.aribaSettingsNav.sapMList {
+    width: 100%;
+    padding: 0;
+}
+
+
+.aribaSettingsContent.sapMFlexBox {
+    flex: 1 1 auto;
+    flex-direction: column;
+    /* Padding removed — title sits flush at panel top (matching left "Settings" header).
+       Top breathing room moved to .aribaSettingsPanelBody padding-top. */
+    padding: 0;
+    background: var(--sapBackgroundColor);
+    overflow-y: auto;
+    overscroll-behavior: none;
+    height: 100%;
+}
+
+.aribaSettingsPanelTitle.sapMTitle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: 2.5rem; /* Bar (Horizon) Compact header-height */
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    box-sizing: border-box;
+    background: var(--sapPageHeader_Background); /* Bar (Horizon) Header spec */
+    color: var(--sapPageHeader_TextColor);        /* Bar (Horizon) Header spec */
+    box-shadow: var(--sapContent_HeaderShadow);   /* detail header */
+    margin-bottom: 0;
+    font-family: var(--sapFontBoldFamily); /* decided in #59 — NOT --sapFontHeaderFamily */
+    font-weight: normal; /* prevents synthetic double-bold: "72-Bold" registers at weight 400 */
+    font-size: var(--sapFontHeader5Size);
+}
+
+/* Side inset for non-title panel content — moved from aribaSettingsContent.
+   Confirmed 32px = 2rem inset for: Appearance theme rows, Language placeholder,
+   UA avatar row, all 4 UA form rows.
+   padding-top: 1.5rem restores top breathing room (moved from aribaSettingsContent). */
+.aribaSettingsPanelBody {
+    padding: 1.5rem 2rem 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Flatten the SAPUI5 flex-item wrapper (40px = title height = zero sticky travel)
+   so sticky engages against the 858px panel VBox, not the 40px wrapper box.
+   Confirmed: selector hits only the title wrapper in Appearance, UA, and
+   placeholder panels via <style> injection on post-body-wrapper DOM. */
+.aribaSettingsContent > .sapMVBox > .sapMFlexItemAlignAuto:first-child,
+.aribaSettingsLeft > .sapMFlexItemAlignAuto:first-child {
+    display: contents;
+}
+
+.aribaSettingsAvatarRow.sapMFlexBox {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.aribaSettingsUserName.sapMTitle {
+    margin: 0;
+}
+
+.aribaSettingsFormRow.sapMFlexBox {
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.aribaSettingsFormLabel.sapMText {
+    color: var(--sapContent_LabelColor);
+    min-width: 5rem;
+}
+
+.aribaSettingsPlaceholder.sapMText {
+    color: var(--sapContent_LabelColor);
+    margin-top: 0.5rem;
+}
+
+/* ---- Settings Dialog: Theme Thumbnails ---- */
+
+/* Updated: UXC-017 — padding per spec, no explicit height (row sizes to Avatar S 48px + padding) */
+.aribaThemeRow.sapMFlexBox {
+    padding: 0.625rem 1rem;
+    gap: 0;
+    align-items: center;
+}
+
+/* Avatar S-size square: margin 0.75rem per UXC-017; border for swatch edge legibility all four themes */
+.aribaThemeRow .aribaThemeAvatar.sapFAvatar {
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    border: 0.0625rem solid var(--sapList_BorderColor);
+}
+
+
+
+/* ---- Joule active state (panel open) ---- */
+/* !important overrides ShellBar's high-specificity white icon color rule on .sapFShellBarActionButton */
+.sapFShellBar .aribaJouleActive.sapMBtnBase .sapMBtnIcon {
+    color: var(--sapShell_Assistant_ForegroundColor) !important;
+}
+
+/* ---- Notifications badge: suppress animation restart on ShellBar re-render ---- */
+/* setIcon() on Joule and ShellBar's internal search toggle both force OverflowToolbar children
+   to re-render, which recreates the badge DOM node and restarts SAPUI5's CSS badge animation.
+   !important is required — SAPUI5 applies the animation via a high-specificity selector on .sapMBadge. */
+.sapFShellBar .sapMBadge {
+    animation: none !important;
+}
+
+/* ---- ShellBar right bar: prevent button overflow into profile avatar ---- */
+/* .sapFShellBarORHB is a flex container (overflow:visible by default). When the search pill
+   is open and the right bar is narrow, the OverflowToolbar's buttons can render past the
+   right bar's right edge and visually overlap the profile avatar (a sibling flex child of
+   the ShellBar). overflow:hidden clips those leaked buttons at the right bar's boundary.
+   The overflow popover (... menu) is in document.body so it is not affected. */
+.sapFShellBarORHB {
+    overflow: hidden;
+}
+
+/* ---- S Breakpoint (< 600px): SideNav overlay ---- */
+
+@media (max-width: 599px) {
+    /* Collapse ToolPage's side panel area to zero so content fills viewport */
+    .sapTntToolPage .sapTntToolPageContentWrapper {
+        margin-left: 0 !important;
+    }
+
+    /* Always fixed-positioned at S — slides off-screen left by default.
+       will-change:auto strips SAPUI5's will-change:transform so position:fixed
+       resolves to the viewport rather than the 0-width aside wrapper. */
+    .sapTntToolPage .sapTntToolPageAside {
+        display: block !important;
+        will-change: auto !important;
+        position: fixed !important;
+        top: 3.25rem;               /* 52px — ShellBar height at S */
+        left: 0;
+        width: 100% !important;
+        height: calc(100% - 3.25rem) !important;
+        z-index: 100;
+        overflow-y: auto;
+        box-shadow: none;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease !important;
+        pointer-events: none;
+        visibility: hidden;
+    }
+
+    /* Slide in: toggled by .aribaPhoneNavOpen on the ToolPage root element */
+    .aribaPhoneNavOpen.sapTntToolPage .sapTntToolPageAside {
+        transform: translateX(0) !important;
+        pointer-events: auto;
+        visibility: visible;
+    }
+
+    /* Inner content fills the full overlay */
+    .sapTntToolPage .sapTntToolPageAsideContent {
+        display: flex !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Force the SideNavigation component itself to fill the full overlay width */
+    .sapTntToolPage .sapTntSideNavigation {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Full search at S: pill fills available ShellBar width.
+       Global .sapMSF rule sets flex:0 0 18rem and margin-left:auto — reset both so the
+       pill stretches to fill the space between the ShellBar edges. */
+    .sapFShellBarFullSearch .sapFShellBarSearchWrap {
+        flex: 1 1 auto !important;
+    }
+    .sapFShellBarFullSearch .sapMSF {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin-left: 0 !important;
+    }
+
+    /* ShellBar header must form its own stacking context above the side nav overlay (z-index: 100),
+       so the search pill and any inline ShellBar children don't slip behind the nav when it opens. */
+    .sapTntToolPage .sapTntToolPageHeaderWrapper {
+        position: relative;
+        z-index: 101;
+    }
+
+    /* SAPUI5 sets popover z-index via inline style (no !important), so a CSS !important wins.
+       Value 200 ensures user-menu, notifications, search-suggestions, and overflow popovers
+       all appear above the side nav overlay (z-index: 100). */
+    .sapMPopover {
+        z-index: 200 !important;
+    }
+
+    /* Prevent click-through to background content while phone nav overlay is open.
+       Full focus trap requires controller changes — see README Known Accessibility Limitations. */
+    .aribaPhoneNavOpen .sapTntToolPageMainContentWrapper {
+        pointer-events: none;
+    }
+}
+
+/* ---- L2 layout: embedded XMLView must fill the ToolPage main content area ----
+   The TNT ToolPage gives its main content wrapper a defined pixel height (overflow:hidden).
+   The mvc:XMLView wrapper div is display:block with no height, so it grows to fit its
+   content instead of being constrained. This prevents DynamicPage from calculating a
+   valid flex content area (contentFitContainer ends up ~16px). Setting height:100% on
+   the immediate sapUiView child of sapTntToolPageMainContentWrapper lets the DynamicPage
+   fill the available space and allocate the scrollable content area correctly. */
+.sapTntToolPageMainContentWrapper > .sapUiView {
+    height: 100%;
+}
+
+/* ObjectIdentifier second line (PR number) — lighter colour matches Fiori spec */
+.sapMObjectIdentifierText {
+    color: var(--sapContent_LabelColor);
+}
+
+/* Table toolbar count "(8)" — matches the Title's group header style (16px bold, sapGroup_TitleTextColor) */
+.sapMText.aribaL2TableTitleCount {
+    font-size: var(--sapGroup_Title_FontSize);
+    font-family: var(--sapFontBoldFamily);  /* Horizon bold via family token; specificity 0,2,0 beats
+       .sapMText at 0,1,0. Replaces fallback-carried var(--sapFontBoldWeight, bold) — load-bearing
+       fallback prohibited by CLAUDE.md §4. Same 72-Bold.woff2 file, accessed via family name. */
+    color: var(--sapGroup_TitleTextColor);
+}
+
+/* Adapt Filters dialog — give each filter row comfortable vertical padding */
+.aribaAdaptFilterRow {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+}
+
+/* Breadcrumb current location text and its preceding separator use sapTextColor
+   so they read as page title context rather than interactive links. */
+.aribaL2Page .sapMBreadcrumbsCurrentLocation {
+    color: var(--sapTextColor);
+}
+/* Target the "/" separator immediately before the current location text.
+   :has() is required here — CSS has no previous-sibling selector. */
+.aribaL2Page .sapMBreadcrumbsSeparator:has(+ .sapMBreadcrumbsCurrentLocation) {
+    color: var(--sapTextColor);
+}
+
+/* INTENTIONAL — do not add a hover border here.
+   The sap.f DynamicPageTitle `navigationActions` action button (icon="sap-icon://overflow", "More")
+   is intentionally borderless on hover: the page-header container treatment overrides the bare-Button
+   Lite hover-border spec. This is NOT an inconsistency with the table/toolbar buttons in this prototype,
+   which correctly DO get a hover background + border from the SAPUI5 theme default — header slot and
+   toolbar slot are different treatments by design. Authority: intentional-divergences.md B-2. */
+
+/* Page header shadow — spec: box-shadow:none when a sticky element (IconTabBar) is present below the header */
+.aribaL2Page .sapFDynamicPageTitleWrapper {
+    box-shadow: none;
+}
+
+/* right: 0 overrides SAPUI5 DynamicPage JS inline style.right = "12px"
+   (DynamicPage.OVERLAY_SCROLLBAR_WIDTH fixed constant — not a real scrollbar track).
+   Scoped to .sapFDynamicPageWithOverlayScrollbar so this is a no-op on traditional-
+   scrollbar environments where that class is absent and the measured offset is correct.
+   Internal class — re-verify on version bumps (currently 1.148.1; see D1).
+   !important required: inline style beats any selector without it. */
+.sapFDynamicPageWithOverlayScrollbar.aribaL2Page .sapFDynamicPageTitleWrapper {
+    right: 0 !important;
+}
+
+/* padding-right: 12px on the header wrapper is the same OVERLAY_SCROLLBAR_WIDTH
+   gutter reservation applied to the filter band. It is set by SAPUI5 library CSS
+   (CDN-loaded, CORS-unreadable via styleSheets API; computed value = 12px before fix).
+   Removing it lets .sapFDynamicPageHeader (the white filter region) fill to full width.
+   Scoped to .sapFDynamicPageWithOverlayScrollbar — inert on traditional-scrollbar
+   environments where the gutter is occupied by a real scrollbar track.
+   Internal class — re-verify on version bumps (currently 1.148.1; see D1).
+   !important required: overrides the framework library CSS author rule. */
+.sapFDynamicPageWithOverlayScrollbar.aribaL2Page .sapFDynamicPageHeaderWrapper {
+    padding-right: 0 !important;
+}
+
+/* ── L2 Page: keep sticky subheader engaged at any zoom / tall viewport ──────
+   DynamicPage's stickySubheaderProvider logic disengages when the scroll
+   container (.sapFDynamicPageContentWrapper) stops overflowing its clientHeight.
+   wrapperClientHeight = vh − 52 (ShellBar height, constant). Setting min-height
+   on .sapFDynamicPageContent (inside the scroll container) raises scrollHeight
+   without raising clientHeight — the standard pattern for forcing overflow.
+   min-height: 100vh on the inner content makes scrollHeight ≥ 100vh, which
+   exceeds clientHeight = vh − 52 at every viewport height.
+   PROTOTYPE-SPECIFIC: valid only for fixed mock-data content. Do not copy to
+   variable-data tables — short result sets at tall viewports would still detach
+   and would need a different approach (e.g. preserveHeaderStateOnScroll). */
+.aribaL2Page .sapFDynamicPageContent {
+    min-height: 100vh;
+}
+
+/* ── L2 Page: center illustration on placeholder tabs ───────────────────────
+   VBox defaults to align-items:stretch, forcing the IllustratedMessage figure
+   to full column width and overriding its own margin:0 auto centering.
+   Known limitation: the min-height:100vh runway above creates scroll space that
+   allows the illustration to scroll under the page header on empty tabs. A pure-
+   CSS fix is not feasible (required top-offset is state-dependent: 251px with
+   header expanded, 139px with header snapped). Deferred — see ariba-review-kit
+   for diagnosis and remaining approach options. */
+.aribaL2Page .aribaPlaceholderTabContent {
+    align-items: center;
+}
+
+/* ── L2 Page: edge-to-edge top; responsive left/right padding ───────────────
+   Remove top padding so the table toolbar sits flush below the header.
+   Left/right uses the same responsive scale as the filter fields above
+   (1rem base → 2rem at 600px → 3rem at 1440px). Bottom stays at the
+   DynamicPage default (32px). */
+.aribaL2Page .sapFDynamicPageContent {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 600px) {
+    .aribaL2Page .sapFDynamicPageContent {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+@media (min-width: 1440px) {
+    .aribaL2Page .sapFDynamicPageContent {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+}
+
+
+/* ── L2 Column Settings Popover ─────────────────────────────────────────────
+   The popover opens anchored to the pressed column header. */
+
+/* Cursor pointer on column headers to signal clickability */
+.aribaL2Page .sapMListTblHeader th {
+    cursor: pointer;
+}
+
+/* SAPUI5 sets justify-content via inline style; !important required to push sort icon to right edge */
+.aribaL2Page th[aria-sort="ascending"] .sapMColumnHeader,
+.aribaL2Page th[aria-sort="descending"] .sapMColumnHeader {
+    justify-content: space-between !important;
+}
+
+/* Icon-only compact button: OverflowToolbar resolves flex min-width:auto to 64px on toolbar
+   buttons; !important is required because this comes from layout geometry, not a CSS rule,
+   and cannot be won by selector specificity alone. Correct size: 2rem × 2rem square. */
+.aribaColSettingsMoreBtn.sapMBtn {
+    min-width: 2rem !important;
+    width: 2rem !important;
+}
+
+
+/* ---- Notifications Popover ---- */
+/* Small gap between bell button and popover top edge.
+   right/left override: SAPUI5 positions via inline style left:Xpx; !important keeps
+   the popover 1rem from the viewport right edge regardless of JS recalculation. */
+.aribaNotificationsPopover.sapMPopover {
+    margin-top: 0.25rem !important;
+    right: 1rem !important;     /* 16px clearance from viewport right edge */
+    left: auto !important;      /* cancels SAPUI5 inline-style left positioning */
+    box-shadow: var(--sapContent_Shadow2) !important; /* spec token for Popovers; !important overrides SAPUI5 default shadow */
+}
+
+/* Header toolbar: title + Clear All / sort / settings buttons */
+.aribaNotificationsPopover .aribaNotificationsHeader.sapMTB {
+    border-bottom: 0.0625rem solid var(--sapList_BorderColor);
+    min-height: 2.75rem;
+    padding: 0 0.25rem 0 1rem; /* 16px left inset aligns "Notifications" title */
+}
+
+/* Popover content area: breathing room around the notification list */
+.aribaNotificationsPopover .sapMPopoverCont {
+    padding: 0.5rem;
+}
+
+/* CSS Grid replaces flexbox wrap. auto-fit recalculates track count per container width
+   (4 at ~1107px, 3 at ~700px, 2 at ~450px, 1 at ~230px) — all rows share the same column
+   template, so track N is identical on every wrapped row. Fixes the flexbox last-row stretch
+   bug (Need By was 379px vs 250.3px on row 1 at 1100px viewport). */
+.aribaFilterBar.sapMHBox {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+    gap: 1rem 0.5rem;
+}
+
+/* !important: overrides sapUiSmallMarginEnd / sapUiTinyMarginBottom added via
+   FlexItemData styleClass; gap above replaces those margins. */
+.aribaFilterBar > .sapMFlexItem {
+    margin: 0 !important;
+    padding: 0 0.25rem;
+}
+
+/* Adapt Filters: spans the full last row (grid-column:1/-1), button right+bottom aligned.
+   Tested: 1/-1 resolves correctly for auto-fit at 4/3/2/1-column counts — no phantom column.
+   Matches Figma Container—Buttons (primaryAxisAlignItems=MAX, bottom-padded). */
+.aribaFilterBar > .sapMFlexItem:last-child {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+/* Filter field wrapper: label + control kept as ONE grid child (a VBox) so the grid track
+   count stays one-per-field, not one-per-label. Fill the grid cell so the control spans the
+   track and the no-label SearchField can bottom-align to the labeled fields' baseline. */
+.aribaFilterBar > .sapMFlexItem > .aribaFilterField {
+    width: 100%;
+    height: 100%;
+}
+
+/* Label-to-field gap. 0.25rem (4px) is a micro-adjustment with no dedicated --sap token at
+   this scale (CLAUDE.md §4 exact-rem exception). */
+.aribaFilterField > .sapMLabel {
+    padding-bottom: 0.25rem;
+}
+
+/* ── Column headers: Visual Core Table spec ─────────────────────────────────
+   Spec: all cells padding-inline 0.5rem; first data column padding-left 1rem.
+   Border on all <th> cells: --sapList_BorderWidth bottom + right in --sapList_BorderColor,
+   matching Fiori Elements table rendering (visible in TablePlayground reference). */
+.aribaL2Page .sapMListTbl .sapMListTblHeader > th {
+    border-bottom: var(--sapList_BorderWidth) solid var(--sapList_BorderColor);
+    border-right: var(--sapList_BorderWidth) solid var(--sapList_BorderColor);
+}
+.aribaL2Page .sapMListTbl .sapMListTblHeaderCell {
+    padding-inline: 0.5rem;
+}
+.aribaL2Page .sapMListTbl .sapMListTblHeader th:not(.sapMListTblHeaderCell) + .sapMListTblHeaderCell {
+    padding-left: 1rem !important; /* SAPUI5 theme CSS is injected after this file; equal-specificity rules in that sheet override without !important */
+}
+
+/* ── Table row padding — matches TablePlayground reference ───────────────────
+   Scoped to .prTableRowPadding (set on the Table element in XML) rather than #prTable
+   because SAPUI5 prefixes all control IDs with the component ID at runtime. */
+.prTableRowPadding tbody tr.sapMLIB > td {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+/* Space below popin content before next row */
+.prTableRowPadding tbody tr.sapMListTblSubRow > td {
+    padding-bottom: 0.75rem;
+}
+
+/* ObjectStatus badge: prevent text wrapping — all status labels are single-line */
+.prTableRowPadding .sapMObjStatusWrapper {
+    white-space: nowrap;
+}
+
+/* ── Ariba ObjectStatus "b" token overrides ─────────────────────────────────
+   SAPUI5 library.css renders inverted Indication states with the standard
+   sapIndicationColor_X_* tokens (pastel). Ariba requires the "b" extension
+   variants (solid filled pills) per the Ariba Object Status visual spec.
+   !important is used intentionally — this is a prototype-level override of
+   SAPUI5 framework styling and must consistently win over library.css. */
+
+/* Indication02 — Negative (Rejected) */
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication02 .sapMObjStatusWrapper {
+    background-color: var(--sapIndicationColor_2b_Background) !important;
+    border-color: var(--sapIndicationColor_2b_BorderColor) !important;
+    color: var(--sapIndicationColor_2b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication02 .sapMObjStatusText,
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication02 .sapMObjStatusIcon {
+    color: var(--sapIndicationColor_2b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+
+/* Indication03 — Critical (Awaiting Approval) */
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication03 .sapMObjStatusWrapper {
+    background-color: var(--sapIndicationColor_3b_Background) !important;
+    border-color: var(--sapIndicationColor_3b_BorderColor) !important;
+    color: var(--sapIndicationColor_3b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication03 .sapMObjStatusText,
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication03 .sapMObjStatusIcon {
+    color: var(--sapIndicationColor_3b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+
+/* Indication04 — Positive (Approved) */
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication04 .sapMObjStatusWrapper {
+    background-color: var(--sapIndicationColor_4b_Background) !important;
+    border-color: var(--sapIndicationColor_4b_BorderColor) !important;
+    color: var(--sapIndicationColor_4b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication04 .sapMObjStatusText,
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication04 .sapMObjStatusIcon {
+    color: var(--sapIndicationColor_4b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+
+/* Indication05 — Informative (Submitted) */
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication05 .sapMObjStatusWrapper {
+    background-color: var(--sapIndicationColor_5b_Background) !important;
+    border-color: var(--sapIndicationColor_5b_BorderColor) !important;
+    color: var(--sapIndicationColor_5b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication05 .sapMObjStatusText,
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication05 .sapMObjStatusIcon {
+    color: var(--sapIndicationColor_5b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+
+/* Indication10 — Draft/Neutral */
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication10 .sapMObjStatusWrapper {
+    background-color: var(--sapIndicationColor_10b_Background) !important;
+    border-color: var(--sapIndicationColor_10b_BorderColor) !important;
+    color: var(--sapIndicationColor_10b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication10 .sapMObjStatusText,
+.aribaObjectStatusBTokens .sapMObjStatusInverted.sapMObjStatusIndication10 .sapMObjStatusIcon {
+    color: var(--sapIndicationColor_10b_TextColor) !important;
+    text-shadow: var(--sapContent_TextShadow) !important;
+}
+
+/* ---- SegmentedButton font-family correction ---- */
+/* SAPUI5 1.148.1 sap/m applies var(--sapFontBoldFamily) to .sapMSegBBtnInner instead
+   of var(--sapButton_FontFamily); redirect to the standard button font stack.
+   Specificity 0,4,0 beats the framework rule (0,3,0) regardless of stylesheet load order. */
+.prTableRowPadding .sapMSegB .sapMSegBBtn .sapMSegBBtnInner {
+    font-family: var(--sapButton_FontFamily);
+}
+.aribaColSettingsPopover .sapMSegB .sapMSegBBtn .sapMSegBBtnInner {
+    font-family: var(--sapButton_FontFamily);
+}

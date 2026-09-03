@@ -1,0 +1,166 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    <Dialog
+        id="adaptFiltersDialog"
+        contentWidth="36rem"
+        contentHeight="28rem"
+        resizable="true"
+        draggable="true"
+    >
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Title text="Adapt Filters" />
+                </contentLeft>
+                <contentRight>
+                    <Button text="Reset" type="Transparent" press=".onAdaptFiltersReset" />
+                </contentRight>
+            </Bar>
+        </customHeader>
+
+        <content>
+            <IconTabBar
+                selectedKey="list"
+                backgroundDesign="Transparent"
+                headerBackgroundDesign="Transparent"
+                expandable="false"
+            >
+                <items>
+                    <IconTabFilter text="List" key="list">
+                        <VBox>
+                            <Toolbar design="Transparent" class="sapUiSizeCompact">
+                                <Label text="Filter Values and Visibility" design="Bold" />
+                                <ToolbarSpacer />
+                                <SearchField placeholder="Search for Filters" width="12rem" />
+                                <Button text="Edit" type="Default" />
+                                <Button text="Sort" type="Default" />
+                            </Toolbar>
+                            <List showSeparators="Inner">
+                                <items>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Search:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Status:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Requester:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Need By:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                </items>
+                            </List>
+                        </VBox>
+                    </IconTabFilter>
+                    <IconTabFilter text="Group" key="group">
+                        <VBox>
+                            <Toolbar design="Transparent" class="sapUiSizeCompact">
+                                <Label text="Filter Values and Visibility" design="Bold" />
+                                <ToolbarSpacer />
+                                <SearchField placeholder="Search for Filters" width="12rem" />
+                            </Toolbar>
+                            <List showSeparators="Inner">
+                                <items>
+                                    <GroupHeaderListItem title="Basic" upperCase="false" />
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Search:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Status:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Requester:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                    <CustomListItem type="Inactive">
+                                        <HBox alignItems="Center" justifyContent="SpaceBetween" width="100%" class="aribaAdaptFilterRow">
+                                            <HBox alignItems="Center">
+                                                <Label text="Need By:" width="9rem" textAlign="End" />
+                                                <ComboBox width="13rem" class="sapUiSmallMarginBegin" />
+                                            </HBox>
+                                            <HBox class="sapUiSmallMarginEnd">
+                                                <ToggleButton icon="sap-icon://show" type="Default" pressed="true" tooltip="Toggle visibility" press=".onToggleFilterVisibility" />
+                                                <Button icon="sap-icon://decline" type="Transparent" tooltip="Remove filter" />
+                                            </HBox>
+                                        </HBox>
+                                    </CustomListItem>
+                                </items>
+                            </List>
+                        </VBox>
+                    </IconTabFilter>
+                </items>
+            </IconTabBar>
+        </content>
+
+        <buttons>
+            <Button text="OK" type="Emphasized" press=".onAdaptFiltersOk" />
+            <Button text="Filter" type="Default" press=".onAdaptFiltersFilter" />
+            <Button text="Cancel" type="Transparent" press=".onAdaptFiltersCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

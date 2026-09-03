@@ -1,0 +1,91 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:unified="sap.ui.unified"
+>
+    <Dialog id="createFromDocumentDialog" title="Create template from a file" contentWidth="40rem">
+        <content>
+
+            <!-- EMPTY STATE: illustration + Upload button -->
+            <VBox id="createFromDocEmptyState"
+                  alignItems="Center"
+                  visible="{createFromDoc>/showEmpty}"
+                  class="sapUiMediumMarginTop sapUiMediumMarginBottom sapUiMediumMarginBeginEnd">
+                <IllustratedMessage
+                    illustrationType="sapIllus-DragFilesToUpload"
+                    illustrationSize="Scene"
+                    title="Drop your file here"
+                    description="For the best import experience, please follow the guideline from this Document [link to Help Portal]."
+                />
+                <unified:FileUploader
+                    id="createFromDocFileUploader"
+                    fileType="doc,docx"
+                    placeholder="No file chosen"
+                    change=".onCreateFromDocFileChange"
+                    buttonText="Upload"
+                    buttonOnly="true"
+                    style="Default"
+                />
+            </VBox>
+
+            <!-- FILE SELECTED STATE: MessageStrip + file row -->
+            <VBox id="createFromDocFileState"
+                  visible="{createFromDoc>/hasFile}"
+                  class="sapUiSmallMarginTop sapUiSmallMarginBottom sapUiSmallMarginBeginEnd">
+
+                <MessageStrip
+                    enableFormattedText="true"
+                    text="Ensure that your file uses the required template format. &lt;a href='#'&gt;Learn More&lt;/a&gt;"
+                    type="Information"
+                    showIcon="true"
+                    showCloseButton="false"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <!-- "Uploaded File" header with Replace link -->
+                <HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiTinyMarginBottom">
+                    <Title text="Uploaded File" titleStyle="H6" />
+                    <Button text="Replace" type="Transparent" press=".onCreateFromDocReplace" />
+                </HBox>
+
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapList_BorderColor);margin:0 0 0.5rem 0'/&gt;" />
+
+                <!-- File row: Avatar icon | name + size | × delete -->
+                <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+                    <Avatar
+                        src="sap-icon://doc-attachment"
+                        backgroundColor="Accent10"
+                        displayShape="Square"
+                        displaySize="S"
+                        class="sapUiSmallMarginEnd"
+                    />
+                    <VBox renderType="Bare">
+                        <layoutData><FlexItemData growFactor="1" /></layoutData>
+                        <Link text="{createFromDoc>/fileName}" press=".onCreateFromDocFileNamePress" />
+                        <Text text="{createFromDoc>/fileSize}" />
+                    </VBox>
+                    <Button
+                        icon="sap-icon://decline"
+                        type="Transparent"
+                        tooltip="Remove file"
+                        press=".onCreateFromDocRemoveFile"
+                    />
+                </HBox>
+
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapList_BorderColor);margin:0'/&gt;" />
+
+            </VBox>
+
+        </content>
+        <buttons>
+            <Button
+                id="createFromDocContinueBtn"
+                text="Continue"
+                type="Emphasized"
+                enabled="{createFromDoc>/hasFile}"
+                press=".onCreateFromDocContinue"
+            />
+            <Button text="Cancel" type="Transparent" press=".onCreateFromDocCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

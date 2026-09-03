@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joule</title>
+  <style>
+    /* 72 font family: NOT hand-declared here.
+       The SAPUI5 1.148.1 bootstrap loads library.css which registers the full '72' family
+       (weights 300/400/600/700, italic) and '72Mono' via its own @font-face rules —
+       confirmed via document.fonts enumeration in the iframe context. Hand-declaring the same
+       family produced duplicate/conflicting registrations and 404s for faces whose paths
+       differ between library.css (correct) and the DNA kit's constructed paths (wrong for
+       72-SemiBold: framework uses 72-SemiboldDuplex, not 72-SemiBold; 72-Italic lives under
+       baseTheme/ not sap_horizon/fonts/). Mono family: framework registers 'SAP72Mono' / '72Mono';
+       joule.js CSS uses '72 Mono' (with space) — see joule-mono-note below.
+
+       SAP-icons vendored locally — the DNA kit uses raw Unicode codepoints against this CSS
+       family name, not the sap-icon:// URI scheme backed by framework registration.
+       Vendoring guarantees the family resolves without runtime dependency. */
+    @font-face {
+      font-family: 'SAP-icons';
+      src: url('assets/SAP-icons.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    /* joule-mono-note: joule.js code-block CSS uses font-family: '72 Mono' (with space, DNA kit
+       convention). The framework registers '72Mono' (no space). We declare one bridge @font-face
+       here to alias '72 Mono' → the same file the framework already loaded, so code blocks render
+       the correct face without a second network request (browser deduplicates same-URL loads). */
+    @font-face {
+      font-family: '72 Mono';
+      src: url('https://ui5.sap.com/1.148.1/resources/sap/ui/core/themes/sap_horizon/fonts/72Mono-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: '72', Arial, Helvetica, sans-serif;
+      /* No background image — iframe sits inside #joule-host-container which provides its own background */
+      background: transparent;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    /* ========== PANEL SHELL ========== */
+    .joule-panel {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--sapGroup_ContentBackground, #fff);
+      /* border-radius handled by the host container (#joule-host-container) */
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    /* ========== HEADER ========== */
+    .joule-header {
+      /* Sapphire: transparent bg, no shadow; DEVTOOLS-MEASURED one.int.sap 2026-07-13 */
+      background: transparent;
+      height: 56px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      /* LIVE-MEASURED one.int.sap .dasShellBarHeader 2026-07-22 (416px panel): 0 .6rem = 9.6px
+         each side. Live-implementation value, not a Horizon spacing token — same provenance
+         treatment as the 44px buttons / 56px header above. */
+      padding: 0 0.6rem;
+      border-radius: 30px 30px 0 0;
+    }
+    .joule-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px; /* 0.5rem — space between panel-toggle button and "Joule" title */
+      /* Tweak D truncation rule 2 of 2: .joule-header-left is itself a flex item of
+         .joule-header; without min-width:0 the title's shrink is blocked one level up and a
+         long title pushes the right-hand buttons out of the 416px panel. Pairs with rule 1 on
+         .joule-header-title. Flex-shrink pattern already used at index.html ~431 and ~756. */
+      min-width: 0;
+    }
+    .joule-header-btn {
+      /* TOKEN-SELF-ADAPTS light+HC; dark override below; GATE-C: light #eff1f2 */
+      background: var(--sapNeutralBackground, #eff1f2);
+      border: 1px solid transparent;
+      border-radius: 60px; /* DEVTOOLS-MEASURED */
+      width: 44px; height: 44px; /* DEVTOOLS-MEASURED */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      /* TOKEN-SELF-ADAPTS light+HC; dark override below; GATE-C: light #5d36ff */
+      color: var(--sapAssistant_Color1, #5d36ff);
+      padding: 10px;
+    }
+    .joule-header-btn:hover {
+      background: var(--sapList_Hover_Background, #f0f0f0);
+    }
+    .joule-header-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+    /* SAP-icons font glyphs for the three left/right header buttons (close keeps its SVG).
+       Codepoints IconPool-sourced 1.148.1: screen-split-one E23F, overflow E1F2, full-screen E166.
+       Colour is inherited from .joule-header-btn (var(--sapAssistant_Color1), self-adapting). */
+    .joule-header-icon {
+      font-family: 'SAP-icons';
+      font-size: 16px;
+      line-height: 1;
+    }
+    .joule-header-title {
+      /* TOKEN-SELF-ADAPTS light+HC; dark override below; GATE-C: light #5d36ff */
+      color: var(--sapAssistant_Color1, #5d36ff);
+      /* sapFontBoldFamily+weight:normal prevents faux-bold (CLAUDE.md §4) */
+      font-family: var(--sapFontBoldFamily); font-weight: normal;
+      font-size: 14px; /* DEVTOOLS-MEASURED */
+      /* Tweak D truncation rule 1 of 2: a long dynamic title ellipsizes instead of pushing the
+         right-hand buttons out of the 416px panel. min-width:0 lets this flex child shrink below
+         its content width; pairs with min-width:0 on .joule-header-left (rule 2). Truncation is
+         DESIGNED — live itself ellipsizes long titles. */
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Dark-only: explicit overrides — token mismatch confirmed GATE-C; foreground Color1 lightens in dark */
+    .sapUiTheme-sap_horizon_dark .joule-header-title,
+    .sapUiTheme-sap_horizon_dark .joule-header-btn,
+    .sapUiTheme-sap_horizon_dark .joule-attach-icon {
+      color: #8e73ff; /* EXPLICIT-per-theme; DEVTOOLS-MEASURED dark one.int.sap 2026-07-13 */
+    }
+    .sapUiTheme-sap_horizon_dark .joule-header-btn {
+      background: var(--sapBackgroundColor, #12171c); /* GATE-C dark #12171c */
+    }
+    .joule-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-right: 8px;
+    }
+    /* Dark-only header band (LIVE-MEASURED 2026-07-17). Live paints a darker canvas
+       (.dasChatArea) BEHIND the splash body; the 0–56px header region shows that canvas as a
+       darker band. Measured four-value matrix (live canvas vs candidate tokens):
+                                  Morning        Dark
+         live .dasChatArea        rgb(255,255,255)   rgb(18,23,28)
+         --sapBackgroundColor        #f5f6f7           #12171c   ← matches dark, NOT morning
+         --sapGroup_ContentBackground  #fff            #1d232a   ← matches morning, NOT dark
+       Neither token matches BOTH axes (token collision) AND the band is DARK-ONLY (morning
+       canvas == body == no seam). So: paint the header --sapBackgroundColor (#12171c, exact live
+       dark match) ONLY in dark; inert in Morning + HC. Do NOT "correct" this to an all-themes
+       token mapping — the matrix above proves no single token reproduces live on both axes.
+       .joule-header spans the full band (0 gaps, verified) so painting it leaves no #1d232a slivers.
+       State scope: state-INDEPENDENT (also shows in dark conversation state). Live's canvas-behind-
+       body structure implies the same, but conversation-state band was inferred-from-structure,
+       not measured. */
+    .sapUiTheme-sap_horizon_dark .joule-header {
+      background: var(--sapBackgroundColor);
+    }
+
+    /* ========== STUB BADGE ========== */
+    .joule-stub-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.12);
+      border-radius: 4px;
+      padding: 2px 6px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    /* ========== WELCOME SCREEN ========== */
+    .joule-welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    /* welcomeBody is hidden in the empty/welcome state — matches live (no context bubble or chips
+       on the blank canvas). renderWelcome() still populates it; it appears only if a conversation
+       file uses it AND the panel is held open before the first advance. */
+    #welcomeBody { display: none; }
+    .joule-welcome-hero {
+      /* OLD DESIGN bg: linear-gradient(180deg, #6135FE 6.46%, #CC00DC 93.76%) - superseded Sapphire 2026-07 */
+      background: transparent;
+      flex: 1;
+      min-height: unset;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      overflow: hidden;
+    }
+    .joule-welcome-diamond {
+      width: 120px;
+      height: 127px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .joule-welcome-diamond img {
+      width: 100%;
+      height: 100%;
+    }
+    .joule-welcome-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+      flex-shrink: 0;
+      padding-bottom: 16px;
+    }
+    .joule-welcome-greeting {
+      display: none; /* removed from Sapphire design */
+    }
+    .joule-welcome-headline {
+      /* TOKEN-SELF-ADAPTS all 4 themes; HC flat-collapse automatic; GATE-C confirmed */
+      font-weight: 400;
+      font-size: 24px; /* DEVTOOLS-MEASURED (was 42px) */
+      max-width: 384px; /* DEVTOOLS-MEASURED SPAN width */
+      text-align: center;
+      background: linear-gradient(
+        to right,
+        var(--sapIndicationColor_8_Hover_Background, #8c00a9) 0%,
+        var(--sapAssistant_Hover_Background, #2800cf) 100%
+      );
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+    }
+    .joule-welcome-help {
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .joule-welcome-help-bubble {
+      /* --sapNeutralBackground: #eff1f2 verified in css_variables.css.
+         OPEN QUESTION: should this follow the AI bubble to --sapAssistant_Answer_Background?
+         No live dark measurement exists for this element. Phase 2 verified it with
+         --sapNeutralBackground (dark=#242e38). Swap requires its own slice with evidence. */
+      background: var(--sapNeutralBackground, #eff1f2);
+      border: 1px solid var(--sapNeutralBackground, #eff1f2);
+      border-radius: 0 8px 8px 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      /* --sapTextColor: #131e29 verified */
+      color: var(--sapTextColor, #131e29);
+      line-height: 20px;
+      max-width: 384px;
+    }
+
+    /* ========== CONTENT AREA ========== */
+    .joule-body {
+      flex: 1;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .joule-body-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      max-width: 100%;
+    }
+
+    /* ========== TIMESTAMP ========== */
+    .joule-timestamp {
+      text-align: center;
+      font-size: 14px;
+      /* EXCEPTION: #8396a8 — no exact token; nearest is --sapContent_LabelColor (#556b82, darker).
+         Using literal value as a documented exception. */
+      color: #8396a8;
+      line-height: 20px;
+      padding: 4px 0;
+    }
+    .joule-timestamp strong { font-weight: 700; }
+
+    /* ========== MESSAGE BUBBLES ========== */
+    .joule-msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+    }
+    .joule-msg--user { align-items: flex-end; }
+    .joule-msg--joule { align-items: flex-start; }
+    .joule-msg-bubble {
+      padding: 8px 16px;
+      font-size: 14px;
+      line-height: 21px;
+      /* --sapTextColor verified */
+      color: var(--sapTextColor, #131e29);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .joule-msg--user .joule-msg-bubble {
+      /* GATE-A: live bg = #eae5ff (lavender). Token: --sapAssistant_Question_Background.
+         GATE-C: light=#eae5ff, dark=#140066, hcw=#fff, hcb=#000. Self-adapts all 4 themes. */
+      background: var(--sapAssistant_Question_Background, #eae5ff);
+      border: 1px solid var(--sapAssistant_Question_Background, #eae5ff);
+      border-radius: 8px 8px 0 8px;
+      max-width: 268px;
+    }
+    .joule-msg--joule .joule-msg-bubble {
+      /* GATE-A: live bg = #eff1f2. Token: --sapAssistant_Answer_Background.
+         GATE-B dark: live = #12171c (confirms token over --sapNeutralBackground #242e38).
+         GATE-C: light=#eff1f2, dark=#12171c, hcw=#b3b3b3, hcb=#585858. Self-adapts all 4 themes. */
+      background: var(--sapAssistant_Answer_Background, #eff1f2);
+      border: 1px solid var(--sapAssistant_Answer_Background, #eff1f2);
+      border-radius: 8px 8px 8px 0;
+      /* Live declares max-width:100% (live probe 2026-07-15, docked 416px panel: display:block, maxWidth:100%, BCR 384).
+         Gate A's 600px reading was unreproducible and would clip ~200px in the embedded panel. Do not "restore" 600px. */
+      max-width: 100%;
+    }
+    .joule-msg-bubble p { margin: 0; }
+    .joule-msg-bubble p + p { margin-top: 8px; }
+
+    /* ========== ACTION ROW ========== */
+    .joule-action-row {
+      /* GATE-A: display:flex, padding 5px 0 0, transparent bg */
+      display: flex;
+      padding: 5px 0 0;
+      background: transparent;
+    }
+    .joule-action-btn {
+      /* GATE-A: 32×32px, border-radius 12px, transparent bg + border at rest */
+      width: 32px; height: 32px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      display: flex; align-items: center; justify-content: center;
+      cursor: default; /* inert stub */
+      padding: 0;
+      /* GATE-C TOKEN: --sapContent_NonInteractiveIconColor
+         light #758ca4, dark #a9b4be, hcw #000, hcb #fff — self-adapts */
+      color: var(--sapContent_NonInteractiveIconColor, #758ca4);
+      font-family: 'SAP-icons'; font-size: 16px; line-height: 1;
+    }
+    /* No :hover rule — GATE-A: button bg/color identical on hover; live's row visibility is hover-triggered
+       but fork is always-visible (deliberate divergence — see plan) */
+
+
+    .joule-bg-link {
+      /* --sapLinkColor: #0064d9 verified */
+      color: var(--sapLinkColor, #0064d9);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .joule-bg-link:hover { border-bottom-color: var(--sapLinkColor, #0064d9); }
+    .joule-bg-link::before { content: '-> '; font-weight: normal; }
+
+    /* Conversation-switch links: [text](conv:name). Mirrors .joule-bg-link's treatment,
+       plus a keyboard :focus-visible ring. NOTE (intentional D2 divergence): the Joule
+       canvas is deliberately inert (no press/hover model) — this is the first genuinely
+       functional interactive element, so it MUST carry real link affordance (hover + focus).
+       An interactive element styled inert is worse than either extreme. Recorded in
+       ~/Documents/ariba-review-kit/intentional-divergences.md. No ::before arrow — five
+       links in a row each prefixed '-> ' reads as noise. Tokens self-adapt across all 4
+       Horizon themes (incl. HC). */
+    .joule-conv-link {
+      color: var(--sapLinkColor, #0064d9);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .joule-conv-link:hover { border-bottom-color: var(--sapLinkColor, #0064d9); }
+    .joule-conv-link:focus-visible {
+      outline: var(--sapContent_FocusWidth, 1px) var(--sapContent_FocusStyle, dotted) var(--sapContent_FocusColor, #0032a0);
+      outline-offset: 2px;
+    }
+
+    /* External links ([text](https://…)) — a distinct interactive canvas element from
+       conv: links (leaves the app in a new tab vs in-place conversation switch), so it
+       carries its own class for future differentiation. Styled to MATCH .joule-conv-link:
+       same token-based color (themed across all four Horizon themes incl. HC — a bare UA
+       <a> would use hardcoded #0000EE, which fails contrast on the HCB canvas), no rest
+       underline, underline on hover, same themed focus ring. Mirrors sap.m.Link. */
+    .joule-ext-link {
+      color: var(--sapLinkColor, #0064d9);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .joule-ext-link:hover { border-bottom-color: var(--sapLinkColor, #0064d9); }
+    .joule-ext-link:focus-visible {
+      outline: var(--sapContent_FocusWidth, 1px) var(--sapContent_FocusStyle, dotted) var(--sapContent_FocusColor, #0032a0);
+      outline-offset: 2px;
+    }
+
+    /* ========== CODE BLOCKS & INLINE CODE ========== */
+    .joule-msg-bubble code {
+      font-family: '72 Mono', 'Courier New', Monaco, monospace;
+      font-size: 13px;
+      /* EXCEPTION: rgba(93,54,255,0.08) — tinted code highlight; no --sap token for tinted overlays */
+      background: rgba(93, 54, 255, 0.08);
+      /* EXCEPTION: #5d36ff (brand Indigo 7) — same brand exception as header gradient */
+      color: #5d36ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 400;
+    }
+    .joule-code-block {
+      font-family: '72 Mono', 'Courier New', Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 12px 0;
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      position: relative;
+    }
+    .joule-code-block::before {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      content: attr(data-language);
+      z-index: 1;
+    }
+    .joule-code-block[data-language=""]::before { content: none; }
+    .joule-code-line-numbers {
+      background: rgba(0,0,0,0.2);
+      color: rgba(255,255,255,0.4);
+      text-align: right;
+      padding: 16px 12px 16px 16px;
+      user-select: none;
+      flex-shrink: 0;
+      min-width: 40px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .joule-code-line-number { display: block; line-height: 1.6; font-size: 11px; }
+    .joule-code-content {
+      flex: 1;
+      overflow-x: auto;
+      padding: 16px;
+      min-width: 0;
+    }
+    .joule-code-content::-webkit-scrollbar { height: 8px; }
+    .joule-code-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+    .joule-code-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+    .joule-code-content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+    .joule-code-block code {
+      font-family: inherit; font-size: inherit; background: transparent;
+      color: inherit; padding: 0; border-radius: 0; font-weight: normal;
+      display: block; white-space: pre;
+    }
+    .joule-code-line { display: block; line-height: 1.6; }
+    .joule-code-block[data-language="sql"] { background: #f8f9fa; color: #24292e; border: 1px solid #e1e4e8; }
+    .joule-code-block[data-language="sql"]::before { color: rgba(0,0,0,0.4); }
+    .joule-code-block[data-language="sql"] .joule-code-line-numbers {
+      background: rgba(0,0,0,0.03); color: rgba(0,0,0,0.4); border-right: 1px solid rgba(0,0,0,0.08);
+    }
+
+    /* Rich SAPUI5 content inside Joule bubbles */
+    .joule-msg-rich { margin-top: 8px; width: 100%; }
+    .joule-msg-rich .sapMList,
+    .joule-msg-rich .sapMTable { background: transparent; }
+
+    /* ========== QUICK REPLY CHIPS ========== */
+    .joule-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 2px; }
+    .joule-chip {
+      background: var(--sapGroup_ContentBackground, #fff);
+      /* EXCEPTION: #b0d4ff — light blue chip border; no --sap token for this tint.
+         In dark/HCB the border becomes less visible but chips remain interactive. */
+      border: 1px solid #b0d4ff;
+      border-radius: 16px;
+      padding: 5px 14px;
+      font-family: '72', sans-serif;
+      font-size: 13px;
+      /* --sapLinkColor verified */
+      color: var(--sapLinkColor, #0064d9);
+      line-height: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0,100,217,0.08);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .joule-chip:hover {
+      /* EXCEPTION: #e8f0fe — chip hover tint; no --sap token. Falls back to
+         --sapGroup_ContentBackground (same as non-hover) in dark/HC — acceptable. */
+      background: #e8f0fe;
+      box-shadow: 0px 0px 2px rgba(27,144,255,0.24), 0px 4px 12px rgba(27,144,255,0.24);
+    }
+
+    /* ========== TYPING INDICATOR ========== */
+    .joule-typing { display: flex; align-items: flex-start; }
+    .joule-typing-bubble {
+      /* Same token as AI bubble — GATE-B dark confirmed #12171c self-adapts correctly. */
+      background: var(--sapAssistant_Answer_Background, #eff1f2);
+      border-radius: 8px 8px 8px 0;
+      padding: 12px 20px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .joule-typing-dot {
+      width: 6px; height: 6px;
+      /* --sapContent_LabelColor verified */
+      background: var(--sapContent_LabelColor, #556b82);
+      border-radius: 50%;
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+    .joule-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .joule-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ========== INPUT FIELD ========== */
+    .joule-input-area { padding: 8px 16px 12px; flex-shrink: 0;
+      /* LIVE-MEASURED (dasChatInputArea): 8 top + 108 box + 12 bottom = 128; +32 disclaimer = 160 footer */ }
+    .joule-input-container {
+      background: var(--sapBaseColor, #fff); /* TOKEN-SELF-ADAPTS all 4; GATE-C */
+      /* TOKEN-SELF-ADAPTS all 4: GATE-C #cdc2ff/#2c02db/#e97624/#795100 */
+      border: 1px solid var(--sapIndicationColor_7b_Hover_Background, #cdc2ff);
+      border-radius: 30px; /* DEVTOOLS-MEASURED (was 20px) */
+      /* glow DEVTOOLS-MEASURED light+dark; exists on live unfocused both themes — matches fork exactly */
+      box-shadow: 0px 0px 2px rgba(93,54,255,0.16), 0px 8px 16px rgba(93,54,255,0.16);
+      /* CHANGED: single-line 45px pill → 108px multi-line box (LIVE-MEASURED 2026-07-15 + Figma ✓) */
+      /* No --sap token resolves to 108px; --sapFontSmallSize=0.75rem=12px is smallest */
+      height: 108px;
+      padding: 14px; /* LIVE-MEASURED inset 15px = 1px border + 14px padding.
+         Horizontal: 1 + 14 + 354 + 14 + 1 = 384 (content 354 matches live).
+         Vertical:   1 + 14 + 38 + 12 + 28 + 14 + 1 = 108. */
+      display: flex;
+      flex-direction: column;
+      gap: 12px; /* LIVE-MEASURED gap between text row and button row */
+      width: 100%; /* fills content width; do not hardcode 384px */
+      box-sizing: border-box;
+    }
+    .joule-input-text-row { flex: 1; display: flex;
+      /* UNSOURCED — live uses a top-aligning ui5-textarea; this centers a single-line <input>.
+         Vertical text offset within the 38px row not measured against live. Will's eyeball judges. */
+      align-items: center; }
+    .joule-input {
+      flex: 1; border: none; outline: none;
+      font-family: '72', sans-serif; font-size: 14px;
+      color: var(--sapTextColor, #131e29);
+      padding: 0; background: transparent; line-height: normal;
+    }
+    .joule-input::placeholder {
+      /* PHASE-2 UNSOURCED — carried forward, not measured against live; add to Phase 2 sweep */
+      color: var(--sapContent_LabelColor, #556b82);
+      font-style: italic;
+    }
+    .joule-input-btn-row {
+      display: flex; align-items: center;
+      justify-content: space-between; /* attach flush left, send flush right */
+      height: 28px; /* LIVE-MEASURED button row height */
+    }
+    /* Attachment button — stubs live's div#fileUploadAttachmentButton (dasChatInputIconButton); inert in this PR */
+    .joule-attach-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      /* TOKEN: --sapAssistant_Answer_Background. LIVE-MEASURED light #EFF1F2, dark #12171c.
+         Dark discriminates vs --sapNeutralBackground dark=#242e38 (wrong). Same finding as PR 1 AI bubble. */
+      background: var(--sapAssistant_Answer_Background, #eff1f2);
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: default; /* inert stub */
+      padding: 0;
+    }
+    .joule-attach-btn:disabled { opacity: 1; } /* stub shows at full opacity */
+    .joule-attach-icon {
+      font-family: 'SAP-icons'; font-size: 14px; line-height: 1;
+      /* TOKEN + DARK OVERRIDE (in .sapUiTheme-sap_horizon_dark block above): foreground Color1 lightens.
+         LIVE-MEASURED: light #5d36ff, dark #8e73ff (same as header title/icon). */
+      color: var(--sapAssistant_Color1, #5d36ff);
+    }
+    .joule-send-btn {
+      width: 28px; height: 28px; min-width: 28px;
+      border-radius: 50%;
+      /* TOKEN background fill — LIVE-MEASURED: dark = #5d36ff (unchanged; fill not foreground).
+         NO dark override needed. Color1-as-fill pattern: stays put. */
+      background: var(--sapAssistant_Color1, #5d36ff);
+      /* PHASE-2 UNSOURCED — border not measured against live; add to Phase 2 sweep */
+      border: 1px solid var(--sapAssistant_Color1, #5d36ff);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: opacity 0.15s; padding: 0;
+    }
+    .joule-send-btn:disabled { opacity: 0.3; cursor: default; } /* LIVE-MEASURED: 0.3 (was 0.4) */
+    .joule-send-btn svg { width: 14px; height: 14px; fill: #fff; }
+
+    /* ========== DISCLAIMER ========== */
+    .joule-disclaimer {
+      text-align: center;
+      /* LIVE-MEASURED (div.dasConsentText.dasText, one.int.sap light) + Figma Joule Sapphire ✓.
+         No --sapFont* token resolves to 11px; --sapFontSmallSize = 0.75rem = 12px is the smallest.
+         Do not "correct" to 12px. */
+      font-size: 11px;
+      /* TOKEN: --sapContent_LabelColor. LIVE-MEASURED: #556B82 = light value exactly.
+         Gate C all 4 themes: light #556b82, dark #8396a8, hcw #000, hcb #fff. Self-adapts. */
+      color: var(--sapContent_LabelColor, #556b82);
+      line-height: 12px; padding: 4px 16px 16px; flex-shrink: 0;
+    }
+
+    /* ========== ANIMATIONS ========== */
+    .joule-msg, .joule-chips {
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .joule-msg.visible, .joule-chips.visible { opacity: 1; transform: translateY(0); }
+    /* JUMP-CUT welcome exit (LIVE-MEASURED 2026-07-17): live's welcome→conversation is a jump-cut,
+       not a fade. The pre-existing 0.5s .joule-welcome fade+translateY(-16px) is removed as a
+       measured divergence-fix. .leaving now hides instantly; .hidden (set same tick in JS) is
+       redundant but harmless. .joule-body.entering below is intentionally UNTOUCHED — no live
+       finding against the conversation-enter animation. */
+    .joule-welcome.leaving { display: none; pointer-events: none; }
+    .joule-welcome.hidden { display: none !important; }
+    .joule-body.entering { opacity: 0; transform: translateY(12px); }
+    .joule-body.entering.visible {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ========== ITEM 1 — welcome-state band-centered input ==========
+       LIVE-MEASURED (one.int.sap, 2026-07-16): in the welcome (brief) state the input is NOT
+       bottom-docked — its TOP edge sits at the vertical midpoint of the content band (header
+       bottom → disclaimer top). Two-point cross-check: 0.504 @winH475, 0.495 @winH528 (≈0.50).
+       Mechanism: in welcome state the welcome hero and the input-area each take flex:1 of the
+       band, and the input is pinned to the TOP of its half → its top edge lands at the band
+       midpoint. Conversation state reverts to the base bottom-dock rule (unchanged).
+       The input is a sibling AFTER #welcomeScreen, so a sibling combinator scopes it by state. */
+
+    /* welcome active (not leaving/hidden): input-area shares the band 50/50, pinned to its top */
+    #welcomeScreen:not(.hidden):not(.leaving) ~ .joule-input-area {
+      flex: 1 1 0;
+      justify-content: flex-start;
+    }
+    /* Transition = JUMP-CUT (LIVE-MEASURED 2026-07-17, Will's close comparison): live's
+       welcome→conversation is a jump-cut, NOT a fade. The earlier "fast fade-out" reading was
+       superseded. No input fade lockstep — the input simply relocates (center→bottom-dock) when
+       #welcomeScreen goes .hidden. The pre-existing 0.5s .joule-welcome.leaving fade is removed
+       below as a measured divergence-fix; .joule-body.entering (conversation-enter) is left
+       untouched — no live finding against it. */
+    /* once #welcomeScreen is .hidden, the welcome-active selector stops matching → input reverts
+       to the base bottom-dock (flex-shrink:0) = the conversation composer. */
+
+    /* ========== ITEM 2 — gradient-mesh (welcome/splash background) ==========
+       LIVE-MEASURED (one.int.sap .dasSplashScreen .meshLayerContainer + .meshLayerImage, 2026-07-16).
+       Container: 267px tall, bottom-anchored, overflow:hidden (load-bearing — 347px images crop to
+       the 267px band; visible would bleed ~80px above). z-index:1 behind content. pointer-events:none.
+       Layers: 4 pre-blurred PNGs, width:200% height:347px object-fit:fill, each floatA–D. */
+    .joule-mesh {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 267px; /* LIVE-MEASURED fixed px (does not scale with panel height) */
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .joule-mesh-layer {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 200%;   /* LIVE-MEASURED */
+      height: 347px; /* LIVE-MEASURED native image height */
+      object-fit: fill;
+      will-change: transform;
+      z-index: 0;
+    }
+    /* animations verbatim from live CSSOM (translate3d %, scale 1.1→1.08→1.18) */
+    .joule-mesh-a { animation: 14s ease-in-out 0s infinite normal none running jouleFloatA; }
+    .joule-mesh-b { animation: 12s ease-in-out 0s infinite normal none running jouleFloatB; }
+    .joule-mesh-c { animation: 16s ease-in-out 0s infinite normal none running jouleFloatC; }
+    .joule-mesh-d { animation: 15s ease-in-out 0s infinite normal none running jouleFloatD; }
+    @keyframes jouleFloatA {
+      0%   { transform: translate3d(10%, 0, 0) scale(1.1); }
+      50%  { transform: translate3d(-100%, 0, 0) scale(1.08); }
+      100% { transform: translate3d(10%, 0, 0) scale(1.18); }
+    }
+    @keyframes jouleFloatB {
+      0%   { transform: translate3d(-80%, 0, 0) scale(1.1); }
+      50%  { transform: translate3d(-10%, 10%, 0) scale(1.08); }
+      100% { transform: translate3d(-80%, 0, 0) scale(1.18); }
+    }
+    @keyframes jouleFloatC {
+      0%   { transform: translate3d(30%, 0, 0) scale(1.1); }
+      50%  { transform: translate3d(-30%, -10%, 0) scale(1.08); }
+      100% { transform: translate3d(30%, 0, 0) scale(1.18); }
+    }
+    @keyframes jouleFloatD {
+      0%   { transform: translate3d(-20%, 0, 0) scale(1.1); }
+      50%  { transform: translate3d(10%, -10%, 0) scale(1.08); }
+      100% { transform: translate3d(-20%, 0, 0) scale(1.18); }
+    }
+    /* reduced-motion gate — matches live (@media prefers-reduced-motion disables the float) */
+    @media (prefers-reduced-motion: reduce) {
+      .joule-mesh-a, .joule-mesh-b, .joule-mesh-c, .joule-mesh-d { animation: none; }
+    }
+    /* HC themes: hide the decorative mesh entirely (Will-approved hypothesis; verify at gate) */
+    .sapUiTheme-sap_horizon_hcb .joule-mesh,
+    .sapUiTheme-sap_horizon_hcw .joule-mesh { display: none; }
+    /* mesh belongs to the welcome state only — hidden once conversation starts */
+    .joule-mesh-hidden { display: none; }
+    /* content sits ABOVE the mesh (mesh z-index:1; content z-index:2) — mirrors live's layering.
+       The panel's flex children are static, so without this they'd paint under the positioned mesh.
+       Backgrounds stay transparent so the mesh shows through behind diamond/greeting/input. */
+    .joule-panel > .joule-header,
+    .joule-panel > .joule-welcome,
+    .joule-panel > #conversationScreen,
+    .joule-panel > .joule-input-area,
+    .joule-panel > .joule-disclaimer {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ========== SAPUI5 overrides for embedded controls ========== */
+    .joule-msg-rich .sapMList,
+    .joule-msg-rich .sapMTable { background: transparent !important; border: none !important; }
+    .joule-msg-rich .sapMListTblCell,
+    .joule-msg-rich .sapMListTblRow,
+    .joule-msg-rich .sapMLIB { background: transparent !important; border-color: var(--sapList_BorderColor, #e5e5e5) !important; }
+    .joule-msg-rich .sapMListTblHeader { background: var(--sapList_Background, #fff) !important; border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5) !important; }
+    .joule-msg-rich .sapMListTblHeader .sapMLabel { font-weight: 600 !important; color: var(--sapContent_LabelColor, #556b82) !important; font-size: 12px !important; }
+    .joule-msg-rich .sapMListTblCell { padding: 6px 8px !important; }
+    .joule-msg-rich .sapMListTblRow { border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5) !important; }
+    .joule-msg-rich .sapMLIB { min-height: 28px !important; padding: 4px 0 !important; }
+    .joule-msg-rich .sapMSLI { padding: 2px 0 !important; }
+    .joule-msg-rich .sapMSLITitleOnly,
+    .joule-msg-rich .sapMSLITitle { font-size: 13px !important; color: var(--sapTextColor, #131e29) !important; }
+    .joule-msg-rich .sapMSLIDescription { font-size: 13px !important; color: var(--sapContent_LabelColor, #556b82) !important; }
+    .joule-msg-rich .sapMListUl { border: none !important; }
+    .joule-msg-rich .sapMOH { background: transparent !important; }
+    /* ObjectAttribute rows default to max-height:32px + overflow:hidden (Horizon CDN),
+       which clips a wrapped 2nd line (e.g. long "Supplier: …" value at panel width).
+       !important beats UI5's CDN stylesheet (same pattern as the .sapMOH rule above).
+       The text/bdi already wrap (white-space:normal); lifting the row cap is all that's needed. */
+    .joule-msg-rich .sapMObjectAttributeDiv { max-height: none !important; }
+    .joule-msg-rich .sapMMsgStrip { border-radius: 8px !important; margin: 4px 0 !important; }
+    .joule-msg-rich .sapUiSizeCompact .sapMListTblCell { padding: 4px 8px !important; }
+
+    /* ========== Progress (restructured: label above value-less bar) ========== */
+    /* The label is a wrapping body-text element ABOVE a showValue:false ProgressIndicator
+       (see renderUI5Progress in joule.js). This replaces the control's own displayValue,
+       which truncated long Ariba `progress text:` strings and overlapped the bar. Tokens
+       resolve across all four Horizon themes; line-height normal avoids the 21px inherited
+       overlap the in-bar text had. */
+    .joule-msg-rich .joule-progress { margin: 4px 0; }
+    .joule-msg-rich .joule-progress-label {
+      font-size: var(--sapFontSize, 0.875rem);
+      line-height: normal;
+      color: var(--sapTextColor, #131e29);
+      white-space: normal;      /* full sentence wraps instead of truncating */
+      margin-bottom: 4px;       /* gap above the bar */
+    }
+
+    /* ========== Rich List Card ========== */
+    .joule-richlist { background: var(--sapGroup_ContentBackground, #fff); border-radius: 12px; box-shadow: var(--sapContent_Shadow1, 0 2px 8px rgba(0,0,0,0.12)); overflow: hidden; margin: 4px 0 16px; }
+    .joule-richlist-header { padding: 12px 16px 8px; }
+    .joule-richlist-title-row { display: flex; align-items: center; gap: 8px; }
+    .joule-richlist-title { font-weight: 700; font-size: 14px; color: var(--sapTextColor, #131e29); }
+    .joule-richlist-count { font-size: 13px; color: var(--sapContent_LabelColor, #556b82); font-weight: 400; }
+    .joule-richlist-subtitle { font-size: 13px; color: var(--sapContent_LabelColor, #556b82); margin: 2px 0 0; }
+    .joule-richlist-bullets { margin: 6px 0 0 16px; padding: 0; font-size: 13px; color: var(--sapContent_LabelColor, #556b82); list-style-type: disc; }
+    .joule-richlist-bullets li { margin: 2px 0; }
+    .joule-richlist-content { border-top: 1px solid var(--sapList_BorderColor, #e5e5e5); }
+    .joule-richlist-item { display: flex; align-items: flex-start; padding: 10px 16px; gap: 12px; border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5); }
+    .joule-richlist-item:last-child { border-bottom: none; }
+    .joule-richlist-avatar { width: 40px; height: 40px; min-width: 40px; border-radius: 10px; background: #c2fcee; display: flex; align-items: center; justify-content: center; }
+    .joule-richlist-text { flex: 1; min-width: 0; }
+    .joule-richlist-item-title { font-weight: 600; font-size: 13px; color: var(--sapTextColor, #131e29); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .joule-richlist-item-subtitle { font-size: 12px; color: var(--sapContent_LabelColor, #556b82); margin-top: 1px; }
+    .joule-richlist-item-desc { font-size: 12px; color: var(--sapContent_LabelColor, #556b82); margin-top: 2px; }
+    .joule-richlist-action { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; white-space: nowrap; }
+    .joule-richlist-status { font-size: 12px; font-weight: 600; }
+    .joule-richlist-btn { font-family: '72', sans-serif; font-size: 12px; color: var(--sapLinkColor, #0064d9); background: none; border: 1px solid var(--sapLinkColor, #0064d9); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+    .joule-richlist-btn:hover { background: rgba(0,100,217,0.06); }
+    .joule-richlist-footer { display: flex; gap: 8px; padding: 8px 16px 12px; border-top: 1px solid var(--sapList_BorderColor, #e5e5e5); }
+    .joule-richlist-footer-btn { font-family: '72', sans-serif; font-size: 13px; font-weight: 600; color: var(--sapLinkColor, #0064d9); background: none; border: none; cursor: pointer; padding: 4px 2px; }
+    .joule-richlist-footer-btn:hover { text-decoration: underline; }
+
+    /* ========== Flow List ========== */
+    .joule-flowlist { display: flex; flex-direction: column; gap: 0; margin: 8px 0 16px; }
+    .joule-flowlist-node { background: var(--sapGroup_ContentBackground, #fff); border: 1px solid var(--sapList_BorderColor, #e5e5e5); border-radius: 8px; padding: 12px 16px; box-shadow: 0px 1px 3px rgba(0,0,0,0.08); }
+    .joule-flowlist-node-title { font-weight: 600; font-size: 14px; color: var(--sapTextColor, #131e29); margin-bottom: 4px; }
+    .joule-flowlist-node-subtitle { font-size: 13px; color: var(--sapContent_LabelColor, #556b82); margin-bottom: 2px; }
+    .joule-flowlist-node-desc { font-size: 12px; color: var(--sapContent_LabelColor, #556b82); margin-top: 4px; }
+    .joule-flowlist-node-status { font-size: 12px; font-weight: 600; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+    .joule-flowlist-connector { display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 4px; }
+    .joule-flowlist-arrow { font-family: 'SAP-icons'; font-size: 16px; color: var(--sapContent_LabelColor, #556b82); line-height: 1; }
+    .joule-flowlist-connector-label { font-size: 12px; color: var(--sapContent_LabelColor, #556b82); font-style: italic; text-align: center; }
+
+    /* ========== Flow Diagram ========== */
+    .joule-flow-diagram { display: flex; flex-direction: column; gap: 38px; margin: 8px 0 12px; padding: 12px; }
+    .joule-flow-row { display: flex; justify-content: center; align-items: flex-start; gap: 25px; flex-wrap: wrap; }
+    .joule-flow-node { background: var(--sapGroup_ContentBackground, #fff); border: 1px solid var(--sapList_BorderColor, #e5e5e5); border-radius: 6px; padding: 7px 9px; box-shadow: 0px 1px 3px rgba(0,0,0,0.1); min-width: 90px; max-width: 140px; position: relative; transition: box-shadow 0.2s ease, transform 0.2s ease; }
+    .joule-flow-node:hover { box-shadow: 0px 2px 6px rgba(0,0,0,0.15); transform: translateY(-1px); }
+    .joule-flow-node-title { font-weight: 700; font-size: 11px; color: var(--sapTextColor, #131e29); margin-bottom: 2px; line-height: 1.3; }
+    .joule-flow-node-subtitle { font-size: 10px; color: var(--sapContent_LabelColor, #556b82); margin-bottom: 2px; line-height: 1.3; }
+    .joule-flow-node-desc { font-size: 9px; color: var(--sapContent_LabelColor, #556b82); margin-top: 3px; line-height: 1.4; }
+    .joule-flow-node-status { font-size: 9px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 2px; }
+    .joule-flow-svg { z-index: 0; }
+    .joule-flow-connector { fill: none; stroke: var(--sapContent_LabelColor, #556b82); stroke-width: 1.5; stroke-linecap: round; opacity: 0.85; transition: opacity 0.2s ease, stroke-width 0.2s ease; }
+    .joule-flow-connector:hover { opacity: 1; stroke-width: 2; }
+    .joule-flow-arrow { fill: var(--sapContent_LabelColor, #556b82); opacity: 0.85; }
+    .joule-flow-label { font-family: '72', sans-serif; font-size: 9px; fill: var(--sapContent_LabelColor, #556b82); font-style: italic; }
+
+    /* ========== Inline Chips ========== */
+    .joule-msg-outside { margin-top: 8px; padding-left: 0; }
+    .joule-chips-block { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+    .joule-chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* ========== STATUS CARD (Joule Sapphire thinking-state stub) ==========
+       All geometry/tokens LIVE-MEASURED from live Joule CSSOM, 2026-07-16 (43-rule read).
+       STUB = Stage 3 only (shimmer bar + one completed step + chevron tab); target BCR 384 × 82.
+       TRANSIENT (D1 reversed in PR #114): live removes the card on completion, and the fork now
+       matches that — the card appears as a thinking-state affordance, dwells 2600ms, then is
+       removed instantly before the answer bubble (advanceConversation owns the timing; card and
+       bubble never coexist). Live also has hover/focus --clickable states the stub omits.
+       Idiom: var(--token) with NO fallbacks (standing dead-code rule; token presence is gated). */
+    .joule-statuscard-outside {
+      /* The flex item under .joule-msg--joule (align-items:flex-start). Must stretch to the
+         384 column width, else it hugs the card's content (~288px) and the card fills that.
+         No margin here — the card carries its own live-measured margin:0.5rem 0. */
+      align-self: stretch;
+      width: 100%;
+    }
+    .joule-statuscard {
+      position: relative;
+      padding: 1rem;
+      border-radius: 1rem;
+      margin-top: 0.5rem;    /* live-measured */
+      /* FORK-ADDED (not live-measured): the chevron tab overhangs 15px below the card box
+         (bottom:-1rem tab). Live's 0.5rem bottom margin (8px) is too small — the chevron would
+         overlap the following bubble by 7px. 1.5rem (24px) = 15px overhang + 9px clearance.
+         Recorded in the PR description as a fork-added value (see plan Verification #6). */
+      margin-bottom: 1.5rem;
+      overflow: visible;            /* permits the chevron tab to overhang the bottom edge */
+      min-width: min(20rem, 100%);  /* live's 320px floor; does not bind at 384 */
+      box-sizing: border-box;
+      background: var(--sapGroup_ContentBackground);   /* NOT --sapBaseColor (Figma error; both #fff in light, token differs) */
+      border: 1px solid var(--sapList_BorderColor);
+      box-shadow: var(--sapContent_Shadow0);
+    }
+    /* Bar track: transparent (live has NO track background — voids the Figma #e6e6e6 hardcode) */
+    .joule-statuscard-bar {
+      position: relative;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    /* Indeterminate fill: full-width token color at opacity 0.7 (rendered ≈#bd4dd4 over white).
+       Do NOT hardcode the blend — breaks in dark/HC where the backdrop differs. */
+    .joule-statuscard-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 2px;
+      opacity: 0.7;
+      overflow: hidden;
+      background: var(--sapAssistant_Color2);
+    }
+    /* Shimmer sweep (clipped by the fill's overflow:hidden). Band = --sapBackgroundColor @80%. */
+    .joule-statuscard-fill::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--sapBackgroundColor) 80%, transparent) 50%, transparent 100%);
+      animation: 2s ease-in-out 0s infinite joule-statuscard-shimmer;
+    }
+    @keyframes joule-statuscard-shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    /* One completed step (the sole step on the captured bounce path) */
+    .joule-statuscard-step {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      border-radius: 4px;
+    }
+    .joule-statuscard-step-content {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .joule-statuscard-step-icon {
+      width: 16px;
+      height: 16px;
+      font-family: 'SAP-icons';
+      font-size: 16px;
+      line-height: 16px;
+      color: var(--sapContent_LabelColor);  /* resolves #556b82 in Horizon light (GATE-C, PR #111) */
+    }
+    .joule-statuscard-step-text {
+      font-size: 0.875rem;                   /* 14px — live-measured */
+      color: var(--sapContent_LabelColor);
+    }
+    /* Chevron tab: absolute, overhangs the card bottom edge (bottom:-1rem = the deliberate tab) */
+    .joule-statuscard-toggle {
+      position: absolute;
+      bottom: -1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      overflow: visible;
+      width: 26px;                 /* rendered footprint (live's ui5-button BCR 26×38) */
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.5rem;
+      background: var(--sapGroup_ContentBackground);
+      border: 1px solid var(--sapButton_BorderColor);
+    }
+    .joule-statuscard-toggle-glyph {
+      font-family: 'SAP-icons';
+      font-size: 16px;
+      line-height: 1;
+      color: var(--sapAssistant_Color1);  /* Joule accent; self-adapts light #5d36ff / dark #8e73ff / HC */
+    }
+  </style>
+</head>
+<body class="sapUiSizeCompact">
+  <div class="joule-panel" id="joulePanel">
+
+    <!-- Item 2 — gradient-mesh (welcome/splash only). LIVE-MEASURED one.int.sap 2026-07-16:
+         4 pre-blurred PNG layers, container 267px bottom-anchored, overflow:hidden (347px images
+         crop to the 267px band). Shown Morning+Evening; hidden in HC themes. Sits behind all
+         content (z-index:1 vs panel content); removed with the welcome screen once conversation
+         starts (JS toggles .joule-mesh-hidden alongside welcomeScreen.hidden). -->
+    <div class="joule-mesh" id="jouleMesh" aria-hidden="true">
+      <img class="joule-mesh-layer joule-mesh-a" src="assets/joule-mesh-a.png" alt="">
+      <img class="joule-mesh-layer joule-mesh-b" src="assets/joule-mesh-b.png" alt="">
+      <img class="joule-mesh-layer joule-mesh-c" src="assets/joule-mesh-c.png" alt="">
+      <img class="joule-mesh-layer joule-mesh-d" src="assets/joule-mesh-d.png" alt="">
+    </div>
+
+    <!-- Header -->
+    <div class="joule-header">
+      <div class="joule-header-left">
+        <!-- View Main Menu — stub: functional menu requires the cloud conversation service.
+             Glyph sap-icon://screen-split-one (U+E23F), IconPool 1.148.1. -->
+        <button class="joule-header-btn" title="View Main Menu" aria-label="View Main Menu — not available in prototype">
+          <span class="joule-header-icon" aria-hidden="true">&#xE23F;</span>
+        </button>
+        <span class="joule-header-title">Joule</span>
+      </div>
+      <div class="joule-header-right">
+        <!-- View Conversation Options — stub. Glyph sap-icon://overflow (U+E1F2), IconPool 1.148.1. -->
+        <button class="joule-header-btn" title="View Conversation Options" aria-label="View Conversation Options — not available in prototype">
+          <span class="joule-header-icon" aria-hidden="true">&#xE1F2;</span>
+        </button>
+        <!-- Fullscreen — stub. Glyph sap-icon://full-screen (U+E166), IconPool 1.148.1. -->
+        <button class="joule-header-btn" title="Fullscreen" aria-label="Fullscreen — not available in prototype">
+          <span class="joule-header-icon" aria-hidden="true">&#xE166;</span>
+        </button>
+        <!-- Close × — posts a close request to the parent frame via postMessage.
+             The parent controller listens, calls _toggleJoulePanel(false), and resets
+             _bJouleOpen + ShellBar button state. The iframe requests; the controller owns state. -->
+        <button class="joule-header-btn" id="joulePanelClose" title="Close" aria-label="Close Joule">
+          <svg viewBox="0 0 16 16"><path d="M12.7 4.35L11.65 3.3 8 6.95 4.35 3.3 3.3 4.35 6.95 8 3.3 11.65l1.05 1.05L8 9.05l3.65 3.65 1.05-1.05L9.05 8z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div class="joule-welcome" id="welcomeScreen">
+      <div class="joule-welcome-hero">
+        <!-- Diamond icon: viewBox 38×36 (not square); width×height preserves 38:36 ratio.
+             LIVE-MEASURED brief docked state: ~56px tall (was 64×61). 56 × 38/36 = 59 wide. -->
+        <img src="assets/joule-icon-sapphire.svg" alt="Joule" width="59" height="56">
+        <div class="joule-welcome-headline">Welcome back. What's next?</div>
+      </div>
+      <div class="joule-body" id="welcomeBody">
+        <div class="joule-body-content" id="welcomeContent">
+          <!-- welcomeHelp: contextMessage from conversation frontmatter, populated by renderWelcome() -->
+          <div id="welcomeHelp"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversation Screen (hidden initially) -->
+    <div class="joule-body" id="conversationScreen" style="display:none;">
+      <div class="joule-body-content" id="conversationContent"></div>
+    </div>
+
+    <!-- Input Field -->
+    <div class="joule-input-area">
+      <div class="joule-input-container">
+        <div class="joule-input-text-row">
+          <input class="joule-input" id="jouleInput" type="text" placeholder="Message Joule..." autocomplete="off">
+        </div>
+        <div class="joule-input-btn-row">
+          <!-- Stubs live's div#fileUploadAttachmentButton (dasChatInputIconButton / dasUploadAttachment);
+               Will specified sap-icon://add, glyph confirmed visually. Live icon name attr not captured. -->
+          <button class="joule-attach-btn" aria-label="Attach file (stub)" disabled>
+            <span class="joule-attach-icon">&#xE058;</span>
+          </button>
+          <button class="joule-send-btn" id="jouleSend" disabled aria-label="Send message">
+            <svg viewBox="0 0 16 16"><path d="M14.5 8.3L1.8 14.7c-.3.2-.7-.1-.6-.5L2.8 9l7.7-1-7.7-1L1.2 1.8c-.1-.4.3-.7.6-.5l12.7 6.4c.3.2.3.6 0 .6z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="joule-disclaimer">Joule uses AI. Verify results.</div>
+  </div>
+
+  <!-- SAPUI5 Bootstrap — pinned to 1.148.1 per §11 (matches host prototype).
+       Second isolated framework instance: the iframe is fully sandboxed from the host page.
+       This mirrors the live product architecture (sapdas.cloud.sap runs its own UI5 instance).
+       Theme: read from ?theme= URL param (set by _toggleJoulePanel in the host controller,
+       which reads the host's current SAPUI5 theme). Whitelist validated by the controller;
+       falls back to sap_horizon if param absent. Uses globalThis["sap-ui-config"] pre-bootstrap
+       config (confirmed in 1.148.1 — data-sap-ui-theme attribute overrides this, so it is
+       intentionally absent; the param is the sole theme source). -->
+  <script>
+    (function() {
+      var VALID = { sap_horizon: 1, sap_horizon_dark: 1, sap_horizon_hcw: 1, sap_horizon_hcb: 1 };
+      var theme = new URLSearchParams(window.location.search).get('theme') || '';
+      globalThis['sap-ui-config'] = globalThis['sap-ui-config'] || {};
+      globalThis['sap-ui-config'].theme = VALID[theme] ? theme : 'sap_horizon';
+    })();
+  </script>
+  <script id="sap-ui-bootstrap"
+    src="https://ui5.sap.com/1.148.1/resources/sap-ui-core.js"
+    data-sap-ui-async="true"
+    data-sap-ui-libs="sap.m"
+    data-sap-ui-compatVersion="edge"
+    data-sap-ui-preload="async">
+  </script>
+
+  <script src="src/joule.js?v=4"></script>
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var convFile = params.get('conv') || 'conversation';
+      convFile = convFile.replace(/[^a-zA-Z0-9_-]/g, '');
+      var script = document.createElement('script');
+      script.src = 'conversations/' + convFile + '.js';
+      document.body.appendChild(script);
+    })();
+
+    // Close × postMessage — sends a close request to the parent frame.
+    // The parent controller validates origin and calls _toggleJoulePanel(false).
+    document.addEventListener('DOMContentLoaded', function() {
+      var closeBtn = document.getElementById('joulePanelClose');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'joule-close' }, window.location.origin);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

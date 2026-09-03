@@ -1,0 +1,54 @@
+<svg viewBox="0 0 38 36" width="38" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient 0: #4013E3 → #F090EB (offset stop-1: 0.0785293) -->
+    <linearGradient id="g0" x1="15.0114" y1="27.9405" x2="30.444" y2="17.8113" gradientUnits="userSpaceOnUse">
+      <stop offset="0.0785293" stop-color="#4013E3"/>
+      <stop offset="1" stop-color="#F090EB"/>
+    </linearGradient>
+    <!-- Gradient 1: #5739F5 → #2815A6 -->
+    <linearGradient id="g1" x1="15.2422" y1="18.9605" x2="6.84343" y2="23.1093" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5739F5"/>
+      <stop offset="1" stop-color="#2815A6"/>
+    </linearGradient>
+    <!-- Gradient 2: #F3B2E9 → #4013E3 -->
+    <linearGradient id="g2" x1="26.6844" y1="10.4605" x2="32.5452" y2="24.2374" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3B2E9"/>
+      <stop offset="1" stop-color="#4013E3"/>
+    </linearGradient>
+    <!-- Gradient 3: #F3B2E9 → #4013E3 (offset stop-2: 0.995192) -->
+    <linearGradient id="g3" x1="26.6838" y1="15.66" x2="10.4717" y2="3.61444" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3B2E9"/>
+      <stop offset="0.995192" stop-color="#4013E3"/>
+    </linearGradient>
+    <!-- Gradient 4: #5739F5 → #2815A6 -->
+    <linearGradient id="g4" x1="11.2733" y1="10.4" x2="-0.662845" y2="6.5165" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5739F5"/>
+      <stop offset="1" stop-color="#2815A6"/>
+    </linearGradient>
+    <!-- Gradient 5: #735AF6 → #F090EB -->
+    <linearGradient id="g5" x1="43.3833" y1="2.44" x2="30.0232" y2="16.2756" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#735AF6"/>
+      <stop offset="1" stop-color="#F090EB"/>
+    </linearGradient>
+    <mask id="mask0" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="1" y="0" width="36" height="34">
+      <path d="M27.2197 0H10.7803C9.31583 0 7.94296 0.712629 7.10017 1.91028L1.93389 9.25183C0.786893 10.8818 0.848709 13.0721 2.08582 14.6347L15.4718 31.5433C17.2735 33.8191 20.7265 33.8191 22.5282 31.5433L35.9142 14.6347C37.1513 13.0721 37.2131 10.8818 36.0661 9.25183L30.8998 1.91028C30.057 0.712629 28.6842 0 27.2197 0Z" fill="white"/>
+      <path d="M27.2197 0H10.7803C9.31583 0 7.94296 0.712629 7.10017 1.91028L1.93389 9.25183C0.786893 10.8818 0.848709 13.0721 2.08582 14.6347L15.4718 31.5433C17.2735 33.8191 20.7265 33.8191 22.5282 31.5433L35.9142 14.6347C37.1513 13.0721 37.2131 10.8818 36.0661 9.25183L30.8998 1.91028C30.057 0.712629 28.6842 0 27.2197 0Z" fill="black" fill-opacity="0.2"/>
+    </mask>
+  </defs>
+  <g mask="url(#mask0)">
+    <!-- Facet 0 -->
+    <path d="M26.0385 12.0005H11.9646L19.0014 36.0005L26.0385 12.0005Z" fill="url(#g0)"/>
+    <!-- Facet 1 -->
+    <path d="M0 12.0005L19 36.0005L11.9632 12.0005H0Z" fill="url(#g1)"/>
+    <!-- Facet 2 -->
+    <path d="M38 12.0005L19 36.0005L26.0368 12.0005H38Z" fill="url(#g2)"/>
+    <!-- Facet 3 -->
+    <path d="M8.44385 0L11.9625 12H26.0365L29.555 0H8.44385Z" fill="url(#g3)"/>
+    <!-- Facet 4 -->
+    <path d="M0 12H11.9632L8.44444 0L0 12Z" fill="url(#g4)"/>
+    <!-- Facet 5 -->
+    <path d="M38 12H26.0368L29.5556 0L38 12Z" fill="url(#g5)"/>
+    <!-- Sparkle -->
+    <path d="M27.0522 6.74707C26.9348 6.30227 26.5129 5.99023 26.029 5.99023C25.545 5.99023 25.1232 6.30227 25.0058 6.74707L24.872 7.25413C24.3996 9.04407 22.9244 10.4417 21.035 10.8891L20.4998 11.0159C20.0303 11.1271 19.7009 11.5267 19.7009 11.9852C19.7009 12.4437 20.0303 12.8434 20.4998 12.9546L21.035 13.0813C22.9244 13.5288 24.3996 14.9264 24.872 16.7163L25.0058 17.2234C25.1232 17.6682 25.545 17.9802 26.029 17.9802C26.5129 17.9802 26.9348 17.6682 27.0522 17.2234L27.186 16.7163C27.6583 14.9264 29.1336 13.5288 31.0229 13.0813L31.5582 12.9546C32.0277 12.8434 32.357 12.4437 32.357 11.9852C32.357 11.5267 32.0277 11.1271 31.5582 11.0159L31.0229 10.8891C29.1336 10.4417 27.6583 9.04407 27.186 7.25413L27.0522 6.74707Z" fill="white"/>
+  </g>
+</svg>
